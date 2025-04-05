@@ -1,0 +1,293 @@
+*pivot.txt*	Advanced buffer and split management for Neovim
+
+================================================================================
+CONTENTS                                                        *pivot-contents*
+
+  1. Introduction ............................ |pivot-introduction|
+  2. Installation ............................ |pivot-installation|
+  3. Usage ................................... |pivot-usage|
+    3.1 Setup ................................ |pivot-setup|
+    3.2 Commands ............................. |pivot-commands|
+    3.3 Functions ............................ |pivot-functions|
+    3.4 Example Mappings ..................... |pivot-example-mappings|
+  4. Features ................................ |pivot-features|
+    4.1 Smart Split Creation ................. |pivot-smart-split-creation|
+    4.2 Context-Aware Smart Split ............ |pivot-smart-split|
+    4.3 Buffer History Tracking .............. |pivot-history-tracking|
+    4.4 Smart Buffer Closing ................. |pivot-smart-close|
+    4.5 Split/Buffer Command Parity .......... |pivot-command-parity|
+  5. Health Checks ........................... |pivot-health|
+  6. License ................................. |pivot-license|
+  7. Changelog ............................... |pivot-changelog|
+
+================================================================================
+1. INTRODUCTION                                           *pivot-introduction*
+
+pivot.nvim (v1.0.0) is a plugin for advanced buffer and split management in Neovim.
+It provides smart functions for creating splits, navigating buffers, and
+managing window layouts.
+
+================================================================================
+2. INSTALLATION                                           *pivot-installation*
+
+Using lazy.nvim:
+>
+    {
+      "username/pivot.nvim",
+      lazy = false,
+      config = function()
+        require("pivot").setup()
+      end
+    }
+<
+
+Or when used as a local plugin:
+>
+    {
+      dir = "~/dotfiles/nvim/lua/lib/pivot",
+      lazy = false,
+      config = function()
+        require("pivot").setup()
+      end
+    }
+<
+
+================================================================================
+3. USAGE                                                        *pivot-usage*
+
+3.1 Setup                                                      *pivot-setup*
+
+To initialize the plugin with default settings:
+>
+    require('pivot').setup()
+<
+
+With custom configuration:
+>
+    require('pivot').setup({
+      auto_record_history = true,  -- Track buffer history automatically
+      history_limit = 10,          -- Number of buffers to keep in history
+      smart_splits = true,         -- Create or merge splits based on context
+      smart_close = true,          -- Smart buffer closing with layout preservation
+      prevent_duplicates = true,   -- Avoid duplicate buffer views
+      
+      -- Customizable keymaps (set to false to disable)
+      keymaps = {
+        -- Split operations
+        split_right = '<leader>sl',
+        -- ... other keymaps
+      }
+    })
+<
+
+3.2 Commands                                                *pivot-commands*
+
+The following commands are available:
+
+    :PivotSplitRight     - Split right, moving current buffer if multiple exist
+    :PivotSplitLeft      - Split left, moving current buffer if multiple exist
+    :PivotSplitUp        - Split up, moving current buffer if multiple exist
+    :PivotSplitDown      - Split down, moving current buffer if multiple exist
+
+    :PivotSmartSplitRight - Smart split right (or merge if split exists)
+    :PivotSmartSplitLeft  - Smart split left (or merge if split exists)
+    :PivotSmartSplitUp    - Smart split up (or merge if split exists)
+    :PivotSmartSplitDown  - Smart split down (or merge if split exists)
+
+    :PivotCloseSplit     - Close current split
+    :PivotCloseOtherSplits - Close all splits except current one
+    :PivotCloseAllSplits - Close all splits, keeping only one with empty buffer
+
+    :PivotCloseBuffer    - Smart buffer closing with window management
+    :PivotCloseOthers    - Close all other buffers
+    :PivotCloseAll       - Close all buffers
+
+    :PivotMerge {dir}    - Merge buffer into direction (h/j/k/l)
+    :PivotMove {dir}     - Move buffer to split in direction (h/j/k/l)
+    :PivotNavigate {dir} - Navigate buffers (next/prev)
+
+3.3 Functions                                              *pivot-functions*
+
+All functions are available through the Lua API:
+>
+    local pivot = require('pivot')
+
+    -- Split functions
+    pivot.split_move_right()  -- Split right, moving current buffer
+    pivot.split_move_left()   -- Split left, moving current buffer
+    pivot.split_move_up()     -- Split up, moving current buffer
+    pivot.split_move_down()   -- Split down, moving current buffer
+    
+    -- Smart split function (context-aware)
+    pivot.smart_split(direction)  -- Creates split or merges based on context
+
+    -- Buffer management
+    pivot.close_buffer()          -- Close current buffer (smart)
+    pivot.close_other_buffers()   -- Close all other buffers
+    pivot.close_all_buffers()     -- Close all buffers
+    
+    -- Split management
+    pivot.close_split()           -- Close current split
+    pivot.close_other_splits()    -- Close all splits except current
+    pivot.close_all_splits()      -- Close all splits, keeping one
+
+    -- Window/buffer operations
+    pivot.move_buffer_to_split(direction)   -- Move buffer to split (h/j/k/l)
+    pivot.merge_buffer_direction(direction) -- Merge into adjacent split (h/j/k/l)
+
+    -- Navigation
+    pivot.navigate_all_buffers(direction)   -- Navigate buffers (next/prev)
+<
+
+3.4 Example Mappings                                *pivot-example-mappings*
+
+Here are some example mappings:
+>
+    -- Split mappings (uses smart split by default)
+    vim.keymap.set('n', '<leader>sl', function() require('pivot').smart_split('l') end, 
+      { desc = 'Smart split right (or merge)' })
+    vim.keymap.set('n', '<leader>sh', function() require('pivot').smart_split('h') end, 
+      { desc = 'Smart split left (or merge)' })
+    vim.keymap.set('n', '<leader>sj', function() require('pivot').smart_split('j') end, 
+      { desc = 'Smart split down (or merge)' })
+    vim.keymap.set('n', '<leader>sk', function() require('pivot').smart_split('k') end, 
+      { desc = 'Smart split up (or merge)' })
+
+    -- Split management (with parallel mapping to buffer management)
+    vim.keymap.set('n', '<leader>sd', function() require('pivot').close_split() end, 
+      { desc = 'Close current split' })
+    vim.keymap.set('n', '<leader>so', function() require('pivot').close_other_splits() end, 
+      { desc = 'Close other splits' })
+    vim.keymap.set('n', '<leader>sa', function() require('pivot').close_all_splits() end, 
+      { desc = 'Close all splits' })
+
+    -- Buffer operations (with parallel mapping to split management)
+    vim.keymap.set('n', '<leader>bd', function() require('pivot').close_buffer() end, 
+      { desc = 'Smart close buffer' })
+    vim.keymap.set('n', '<leader>bo', function() require('pivot').close_other_buffers() end, 
+      { desc = 'Close other buffers' })
+    vim.keymap.set('n', '<leader>ba', function() require('pivot').close_all_buffers() end, 
+      { desc = 'Close all buffers' })
+
+    -- Move buffer to split
+    vim.keymap.set('n', '<leader>bl', function() require('pivot').move_buffer_to_split('l') end, 
+      { desc = 'Move buffer to right split' })
+    vim.keymap.set('n', '<leader>bh', function() require('pivot').move_buffer_to_split('h') end, 
+      { desc = 'Move buffer to left split' })
+
+    -- Buffer navigation
+    vim.keymap.set('n', '<C-h>', function() require('pivot').navigate_all_buffers('prev') end, 
+      { desc = 'Previous buffer' })
+    vim.keymap.set('n', '<C-l>', function() require('pivot').navigate_all_buffers('next') end, 
+      { desc = 'Next buffer' })
+<
+
+================================================================================
+4. FEATURES                                                  *pivot-features*
+
+4.1 Smart Split Creation                              *pivot-smart-split-creation*
+
+When creating a split with only one buffer open:
+- The buffer stays in the original window
+- A new empty buffer is created in the new split
+
+When creating a split with multiple buffers open:
+- The current buffer moves to the new split
+- The original window shows another buffer from history
+
+4.2 Context-Aware Smart Split                                *pivot-smart-split*
+
+The pivot.smart_split(direction) function intelligently handles splits:
+
+1. If a split exists in the specified direction:
+   - Merges the current buffer into that split (moves + closes current window)
+   - This eliminates the need for separate merge commands
+
+2. If no split exists in the specified direction:
+   - Creates a new split in that direction using the split_move functions
+   - Handles buffer movement intelligently based on buffer count
+
+Commands:
+- :PivotSmartSplitRight - Split right or merge right if a split exists
+- :PivotSmartSplitLeft  - Split left or merge left if a split exists
+- :PivotSmartSplitUp    - Split up or merge up if a split exists
+- :PivotSmartSplitDown  - Split down or merge down if a split exists
+
+Example mapping:
+>
+    vim.keymap.set('n', '<leader>sl', function() 
+      require('pivot').smart_split('l') 
+    end, { desc = 'Smart split right (or merge)' })
+<
+
+4.3 Buffer History Tracking                              *pivot-history-tracking*
+
+Each window keeps track of previously viewed buffers, enabling smart behaviors:
+- Better fallback options when closing buffers
+- Smart buffer switching when creating splits
+
+4.4 Smart Buffer Closing                                       *pivot-smart-close*
+
+The pivot.close_buffer() function provides intelligent buffer closing:
+
+1. For terminal buffers: 
+   - Simply quits the terminal
+
+2. For regular buffers:
+   - Finds a suitable replacement buffer from the window's history
+   - Checks if displaying the replacement would create duplicate views
+
+3. Window behavior:
+   - Closes the window if:
+     * No suitable replacement buffer is available
+     * The replacement would create duplicate views across windows
+     * No more valid buffers remain
+   - Otherwise, switches to the replacement buffer and closes the original
+   - Special handling for the last window to avoid closing Neovim entirely
+
+This approach preserves a clean window layout by eliminating empty or 
+duplicate windows while maintaining your editing context.
+
+4.5 Split/Buffer Command Parity                           *pivot-command-parity*
+
+The plugin provides parallel commands for both split and buffer management:
+
+Buffer Commands              | Split Commands
+---------------------------- | ---------------------------
+:PivotCloseBuffer             | :PivotCloseSplit
+:PivotCloseOthers             | :PivotCloseOtherSplits
+:PivotCloseAll                | :PivotCloseAllSplits
+
+This parity extends to keymaps as well, with parallel bindings:
+- `<leader>bd` / `<leader>sd` - Close buffer / Close split
+- `<leader>bo` / `<leader>so` - Close other buffers / Close other splits
+- `<leader>ba` / `<leader>sa` - Close all buffers / Close all splits
+
+This consistent pattern makes the commands easy to remember and provides a 
+clear mental model for managing both buffers and splits.
+
+================================================================================
+5. HEALTH CHECKS                                              *pivot-health*
+
+Run `:checkhealth pivot` to verify your installation and configuration.
+
+The health check will verify:
+- Compatible Neovim version
+- Proper keymap configuration
+- Command registration
+- Autocmd registration
+- Configuration integrity
+- Parity between split and buffer commands
+
+================================================================================
+6. LICENSE                                                   *pivot-license*
+
+MIT License
+
+================================================================================
+7. CHANGELOG                                                *pivot-changelog*
+
+For the full version history, see the CHANGELOG.md file or visit:
+https://github.com/username/pivot.nvim/blob/main/CHANGELOG.md
+
+ vim:tw=78:ts=8:ft=help:norl: 
