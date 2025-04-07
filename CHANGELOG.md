@@ -5,7 +5,26 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## [0.1.0] - 2025-04-05
+## [0.1.0] - YYYY-MM-DD
+
+### Added
+
+- **Full-Span Splits:** New commands (`SplitFullRight`, `SplitFullLeft`, `SplitFullUp`, `SplitFullDown`) and keymaps (default: `<leader>sl/h/j/k`) to create splits that span the full editor height or width, regardless of current layout.
+- Window equalization (`wincmd =`) is automatically applied after full-span splits to distribute window sizes evenly.
+
+### Changed
+
+- **Smart Split Keymaps:** Default keymaps for existing smart/layout-aware splits are now `<leader>sL/H/J/K` (using capital letters) to differentiate them from the new full-span splits.
+- **Split Logic:** Refactored standard split behavior (`split_move_*`) to more reliably replace the buffer in the original window with a fallback buffer when available.
+- **Window Equalization:** The `wincmd =` command after full-span splits is now deferred using `vim.schedule` for improved reliability.
+
+### Removed
+
+- **History Limit:** Removed the `history_limit` configuration option. Window buffer history is now effectively unlimited.
+
+---
+
+## [Unreleased] - YYYY-MM-DD
 
 ### Added
 

@@ -9,13 +9,14 @@
 - **What it does:** Creates, merges, and manages window splits while tracking buffer history to make smart decisions
 - **Key benefits:**
   - Maintains clean window layouts without duplicate buffers
-  - Remembers buffer history per window for smart fallbacks
+  - Remembers buffer history per window for smart fallbacks (history is unlimited)
   - Provides consistent commands for both buffer and split operations
 - **Default keymaps:**
   | Action | Keys | Description |
-  |--------|------|-------------|
-  | **Splits** | `<leader>sl/sh/sj/sk` | Create/merge splits (right/left/down/up) |
-  | | `<leader>sd/so/sa` | Close split / close others / close all |
+  |----------------------------------|-------------------------|-------------------------------------------|
+  | **Smart Splits (Layout-Aware)** | `<leader>sl/sh/sj/sk` | Create/merge splits (right/left/down/up) |
+  | **Full-Span Splits** | `<leader>sL/sH/sJ/sK` | Create full-width/height splits |
+  | **Split Management** | `<leader>sd/so/sa` | Close split / close others / close all |
   | **Buffers** | `<leader>bd/bo/ba` | Close buffer / close others / close all |
   | | `<C-h>/<C-l>` or `<C-k>/<C-j>` | Navigate prev/next buffer |
   | **Navigation** | `<C-D-h>/<C-D-l>/<C-D-j>/<C-D-k>` | Navigate between splits (left/right/down/up) |
@@ -80,51 +81,56 @@ With default settings, just try these commands:
 ```lua
 require('pivot').setup({
   -- Core behavior settings
-  auto_record_history = true,  -- Remember buffer history for smarter decisions
-  history_limit = 10,          -- Maximum number of buffers to remember per window
-  smart_splits = true,         -- Create new splits or merge existing ones based on context
+  auto_record_history = true,  -- Remember buffer history for smarter decisions (history is unlimited)
+  smart_splits = true,         -- Create new splits or merge existing ones based on context (using smart keymaps)
   smart_close = true,          -- Close buffers while preserving window layout when possible
   prevent_duplicates = true,   -- Avoid showing the same buffer in multiple windows
 
   -- Keymap configuration (set any to false to disable)
   keymaps = {
-    -- Split creation/merging
-    split_right = '<leader>sl',  -- Split right or merge to right window
-    split_left = '<leader>sh',   -- Split left or merge to left window
-    split_down = '<leader>sj',   -- Split down or merge to window below
-    split_up = '<leader>sk',     -- Split up or merge to window above
+    -- Split operations (Layout-Aware/Smart: merge or split within layout)
+    split_smart_right = '<leader>sl', -- Default: Lowercase l
+    split_smart_left = '<leader>sh',  -- Default: Lowercase h
+    split_smart_down = '<leader>sj',  -- Default: Lowercase j
+    split_smart_up = '<leader>sk',    -- Default: Lowercase k
+
+    -- Split operations (Full-Span: always split, ignoring layout)
+    split_full_right = '<leader>sL', -- Default: Capital L
+    split_full_left = '<leader>sH',  -- Default: Capital H
+    split_full_down = '<leader>sJ',  -- Default: Capital J
+    split_full_up = '<leader>sK',    -- Default: Capital K
 
     -- Split window management
-    close_split = '<leader>sd',         -- Close the current split
-    close_other_splits = '<leader>so',  -- Close all splits except current
-    close_all_splits = '<leader>sa',    -- Close all splits (keep one empty)
+    close_split = '<leader>sd',
+    close_other_splits = '<leader>so',
+    close_all_splits = '<leader>sa',
 
     -- Buffer operations
-    close_buffer = '<leader>bd',         -- Close current buffer (smart)
-    close_other_buffers = '<leader>bo',  -- Close all buffers except current
-    close_all_buffers = '<leader>ba',    -- Close all buffers
+    close_buffer = '<leader>bd',
+    close_other_buffers = '<leader>bo',
+    close_all_buffers = '<leader>ba',
 
     -- Move buffer to different split
-    move_to_right = '<leader>bl',  -- Move buffer to split on the right
-    move_to_left = '<leader>bh',   -- Move buffer to split on the left
-    move_to_down = '<leader>bj',   -- Move buffer to split below
-    move_to_up = '<leader>bk',     -- Move buffer to split above
+    move_to_right = '<leader>bl',
+    move_to_left = '<leader>bh',
+    move_to_down = '<leader>bj',
+    move_to_up = '<leader>bk',
 
     -- Buffer navigation (skips buffers visible in other windows)
-    prev_buffer = '<C-h>',       -- Go to previous buffer
-    next_buffer = '<C-l>',       -- Go to next buffer
-    alt_prev_buffer = '<C-k>',   -- Alternate previous buffer binding
-    alt_next_buffer = '<C-j>',   -- Alternate next buffer binding
+    prev_buffer = '<C-h>',
+    next_buffer = '<C-l>',
+    alt_prev_buffer = '<C-k>', -- Alternate binding
+    alt_next_buffer = '<C-j>', -- Alternate binding
 
-    -- Alternative keys for different keyboard layouts/OS
-    alt_prev = {'˙', '<A-h>'},  -- Mac Option-h, Windows/Linux Alt-h
-    alt_next = {'¬', '<A-l>'},  -- Mac Option-l, Windows/Linux Alt-l
+    -- Alternative keys for different keyboard layouts/OS (Example)
+    -- alt_prev = {'˙', '<A-h>'},  -- Mac Option-h, Windows/Linux Alt-h
+    -- alt_next = {'¬', '<A-l>'},  -- Mac Option-l, Windows/Linux Alt-l
   },
 
   -- Command settings
   commands = {
-    enable = true,      -- Whether to create Neovim commands
-    prefix = 'Pivot',   -- Prefix for all commands (e.g., :PivotSplitRight)
+    enable = true,
+    prefix = 'Pivot',
   },
 })
 ```
@@ -135,30 +141,57 @@ require('pivot').setup({
 
 ### 🪟 Split Management
 
-Create beautiful window layouts with ease:
+pivot.nvim offers two types of splitting behavior:
+
+1.  **Smart/Layout-Aware Splits:** (Default: `<leader>sl/sh/sj/sk`)
+
+    - If `smart_splits = true` (default) and a split already exists in the target direction, pivot will **merge** the current buffer into that split.
+    - If no split exists or `smart_splits = false`, pivot creates a new split **within the current layout column/row**. It intelligently moves the current buffer to the new split and replaces the original window's buffer with a fallback from its history (if available and `prevent_duplicates` allows).
+
+2.  **Full-Span Splits:** (Default: `<leader>sL/sH/sJ/sK`)
+    - These commands **always** create a new split that spans the **full height (for left/right) or full width (for up/down)** of the Neovim window, regardless of the existing layout.
+    - They also intelligently move the current buffer and find a fallback for the original window.
+    - After splitting, window sizes are automatically equalized (`wincmd =`).
 
 <details>
-<summary>Show split window diagram</summary>
+<summary>Show split window diagram (Layout-Aware)</summary>
 
 ```
 +---------------+                +--------+--------+
-|               |     Split      |        |        |
-|    Buffer     |     Right      | Buffer |  New   |
-|               |     ------>    |        |        |
+|               |   Layout-Aware |        |        |
+|    Buffer     |   Split Right  | Buffer | New/Fb |
+|               |   (<leader>sl)  |        |        |
 +---------------+                +--------+--------+
 ```
+
+(Fb = Fallback Buffer)
 
 </details>
 
-Commands:
+<details>
+<summary>Show split window diagram (Full-Span)</summary>
 
-- `<leader>sl` - Split right or merge with right window
-- `<leader>sh` - Split left or merge with left window
-- `<leader>sj` - Split down or merge with window below
-- `<leader>sk` - Split up or merge with window above
-- `<leader>sd` - Close current split
-- `<leader>so` - Close all other splits
-- `<leader>sa` - Close all splits (keep one)
+```
++---------------+                +-----------------+             +-----------------+
+|   Win 1       |                |   Win 1 (Fb)    |             |   Win 1 (Fb)    |
++---------------+   Full-Span    +-----------------+   wincmd=   +-----------------+
+|   Win 2 (Cur) |   Split Right  |   Win 2 (New)   |   ----->    |   Win 2 (New)   |
++---------------+   (<leader>sL)  |   (Buffer)      |             |   (Buffer)      |
+|   Win 3       |                |   Win 3         |             |   Win 3         |
++---------------+                +-----------------+             +-----------------+
+```
+
+(Creates a new full-height window on the right, moves Buffer, puts Fallback in original Win 2, then equalizes)
+
+</details>
+
+**Keymaps:**
+
+- `<leader>sl/sh/sj/sk`: Smart/Layout-Aware split (right/left/down/up)
+- `<leader>sL/sH/sJ/sK`: Full-Span split (right/left/down/up)
+- `<leader>sd`: Close current split
+- `<leader>so`: Close all other splits
+- `<leader>sa`: Close all splits (keep one)
 
 ### 📄 Buffer Management
 
@@ -197,16 +230,24 @@ Commands:
 ## ⌨️ Vim Commands
 
 <details>
-<summary>Show all available Vim commands</summary>
+<summary>Show all available Vim commands (default prefix: Pivot)</summary>
 
 ```
-:PivotSplitRight        - Create split on the right
-:PivotSmartSplitRight   - Smart split right (or merge)
-:PivotCloseSplit        - Close current split
-:PivotCloseBuffer       - Close buffer smartly
-:PivotMove {dir}        - Move buffer to direction (h/j/k/l)
-:PivotNavigate {dir}    - Navigate buffers (next/prev)
-:PivotNavigateSplit {dir} - Navigate to split in direction (left/right/up/down or h/j/k/l)
+:PivotSplitRight/Left/Up/Down          - Split window (layout aware), moving buffer if possible
+:PivotSmartSplitRight/Left/Up/Down     - Smart split (merge or layout-aware split)
+:PivotSplitFullRight/Left/Up/Down     - Split window full-span, moving buffer if possible
+:PivotCloseSplit                      - Close current split
+:PivotCloseOtherSplits                - Close all splits except current
+:PivotCloseAllSplits                  - Close all splits (keep one empty if smart_close)
+:PivotCloseBuffer                     - Close buffer smartly (preserves layout)
+:PivotCloseOtherBuffers               - Close all buffers except current
+:PivotCloseAllBuffers                 - Close all buffers (creates empty if smart_close)
+:PivotMoveToSplit {dir}               - Move buffer to split in direction (h/j/k/l)
+:PivotMergeBufferDirection {dir}      - Merge current buffer into adjacent split (h/j/k/l)
+:PivotNavigate {dir}                  - Navigate buffers (next/prev/first/last or index)
+:PivotNavigateAll {dir}               - Navigate all buffers, skipping visible (next/prev)
+:PivotNavigateSplit {dir}             - Navigate to split in direction (left/right/up/down or h/j/k/l)
+:PivotCycleBufferHistory {dir}        - Cycle through the current window's buffer history (prev/next)
 ```
 
 </details>
@@ -240,7 +281,6 @@ The health check verifies:
 - ✅ Required API functions
 - ✅ Plugin configuration status
 - ✅ Conflicting settings, including:
-  - `auto_record_history: true` with `history_limit: 0` (history won't work)
   - `auto_record_history: false` with `smart_close: true` (reduced functionality)
   - `smart_splits: true` with `prevent_duplicates: false` (potential duplicates)
 - ✅ Incomplete keymap pairs (missing complementary mappings)
@@ -295,16 +335,13 @@ require('pivot').setup({
 
 If some features don't work as expected, it might be due to conflicting settings:
 
-- **Smart buffer closing not working well?**  
+- **Smart buffer closing not working well?**
   Ensure both `auto_record_history` and `smart_close` are enabled.
 
-- **Duplicate buffers appearing in splits?**  
+- **Duplicate buffers appearing in splits?**
   Check that `prevent_duplicates` is enabled.
 
-- **Buffer history not working?**  
-  Verify that `history_limit` is greater than 0.
-
-- **Weird behavior with incomplete keymaps?**  
+- **Weird behavior with incomplete keymaps?**
   Make sure you've mapped both sides of paired operations (left/right, previous/next).
 
 Run `:checkhealth pivot` to automatically detect these issues.
