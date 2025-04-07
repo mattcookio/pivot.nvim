@@ -401,6 +401,11 @@ function M.split_move_full_right(opts)
         end
         vim.api.nvim_set_current_win(new_win)
     end
+    vim.schedule(function()
+        if vim.api.nvim_win_is_valid(new_win) then -- Check if window still valid
+            vim.cmd('wincmd =')
+        end
+    end)
 end
 
 -- Split full-height left, moving buffer if fallback exists
@@ -434,6 +439,11 @@ function M.split_move_full_left(opts)
         end
         vim.api.nvim_set_current_win(new_win)
     end
+    vim.schedule(function()
+        if vim.api.nvim_win_is_valid(new_win) then -- Check if window still valid
+            vim.cmd('wincmd =')
+        end
+    end)
 end
 
 -- Split full-width down, moving buffer if fallback exists
@@ -467,6 +477,11 @@ function M.split_move_full_down(opts)
         end
         vim.api.nvim_set_current_win(new_win)
     end
+    vim.schedule(function()
+        if vim.api.nvim_win_is_valid(new_win) then -- Check if window still valid
+            vim.cmd('wincmd =')
+        end
+    end)
 end
 
 -- Split full-width up, moving buffer if fallback exists
@@ -500,6 +515,11 @@ function M.split_move_full_up(opts)
         end
         vim.api.nvim_set_current_win(new_win)
     end
+    vim.schedule(function()
+        if vim.api.nvim_win_is_valid(new_win) then -- Check if window still valid
+            vim.cmd('wincmd =')
+        end
+    end)
 end
 
 return M
