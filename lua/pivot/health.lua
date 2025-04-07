@@ -72,13 +72,6 @@ function M.check()
     -- Check for conflicting settings
     health.info("Checking for conflicting settings...")
 
-    -- Check auto_record_history and history_limit
-    if config_module.options.auto_record_history and config_module.options.history_limit <= 0 then
-      health.warn("Conflicting settings: auto_record_history is enabled but history_limit is " ..
-        config_module.options.history_limit .. " (should be > 0)")
-      health.info("History tracking will not work properly with a limit of 0 or less")
-    end
-
     -- Check auto_record_history and smart_close
     if not config_module.options.auto_record_history and config_module.options.smart_close then
       health.warn("Potentially ineffective settings: auto_record_history is disabled but smart_close is enabled")

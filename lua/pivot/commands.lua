@@ -14,40 +14,58 @@ function M.register_commands(config)
 
   -- Command definitions
   local command_def = {
-    -- Split commands
+    -- Split commands (Layout-Aware)
     [prefix .. "SplitRight"] = {
       function() splits.split_move_right(config) end,
-      desc = "Split window to the right and move current buffer"
+      desc = "Split window right (layout aware), moving buffer if possible"
     },
     [prefix .. "SplitLeft"] = {
       function() splits.split_move_left(config) end,
-      desc = "Split window to the left and move current buffer"
+      desc = "Split window left (layout aware), moving buffer if possible"
     },
     [prefix .. "SplitUp"] = {
       function() splits.split_move_up(config) end,
-      desc = "Split window upwards and move current buffer"
+      desc = "Split window up (layout aware), moving buffer if possible"
     },
     [prefix .. "SplitDown"] = {
       function() splits.split_move_down(config) end,
-      desc = "Split window downwards and move current buffer"
+      desc = "Split window down (layout aware), moving buffer if possible"
     },
 
-    -- Smart split commands
+    -- Smart split commands (Merge or Layout-Aware Split)
     [prefix .. "SmartSplitRight"] = {
       function() splits.smart_split('l', config) end,
-      desc = "Smart split right (or merge if split exists)"
+      desc = "Smart split right (merge or layout-aware split)"
     },
     [prefix .. "SmartSplitLeft"] = {
       function() splits.smart_split('h', config) end,
-      desc = "Smart split left (or merge if split exists)"
+      desc = "Smart split left (merge or layout-aware split)"
     },
     [prefix .. "SmartSplitUp"] = {
       function() splits.smart_split('k', config) end,
-      desc = "Smart split up (or merge if split exists)"
+      desc = "Smart split up (merge or layout-aware split)"
     },
     [prefix .. "SmartSplitDown"] = {
       function() splits.smart_split('j', config) end,
-      desc = "Smart split down (or merge if split exists)"
+      desc = "Smart split down (merge or layout-aware split)"
+    },
+
+    -- Split commands (Full-Span)
+    [prefix .. "SplitFullRight"] = {
+      function() splits.split_move_full_right(config) end,
+      desc = "Split window full-height right, moving buffer if possible"
+    },
+    [prefix .. "SplitFullLeft"] = {
+      function() splits.split_move_full_left(config) end,
+      desc = "Split window full-height left, moving buffer if possible"
+    },
+    [prefix .. "SplitFullUp"] = {
+      function() splits.split_move_full_up(config) end,
+      desc = "Split window full-width up, moving buffer if possible"
+    },
+    [prefix .. "SplitFullDown"] = {
+      function() splits.split_move_full_down(config) end,
+      desc = "Split window full-width down, moving buffer if possible"
     },
 
     -- Split management
@@ -151,11 +169,21 @@ function M.setup_keymaps(config)
     end
   end
 
-  -- Split operations
-  set_keymap(keymaps.split_right, function() splits.smart_split('l', config) end, "Smart split right (or merge)")
-  set_keymap(keymaps.split_left, function() splits.smart_split('h', config) end, "Smart split left (or merge)")
-  set_keymap(keymaps.split_down, function() splits.smart_split('j', config) end, "Smart split down (or merge)")
-  set_keymap(keymaps.split_up, function() splits.smart_split('k', config) end, "Smart split up (or merge)")
+  -- Split operations (Smart/Layout-Aware)
+  set_keymap(keymaps.split_smart_right, function() splits.smart_split('l', config) end,
+    "Smart split right (merge or layout-aware)")
+  set_keymap(keymaps.split_smart_left, function() splits.smart_split('h', config) end,
+    "Smart split left (merge or layout-aware)")
+  set_keymap(keymaps.split_smart_down, function() splits.smart_split('j', config) end,
+    "Smart split down (merge or layout-aware)")
+  set_keymap(keymaps.split_smart_up, function() splits.smart_split('k', config) end,
+    "Smart split up (merge or layout-aware)")
+
+  -- Split operations (Full-Span)
+  set_keymap(keymaps.split_full_right, function() splits.split_move_full_right(config) end, "Split full-height right")
+  set_keymap(keymaps.split_full_left, function() splits.split_move_full_left(config) end, "Split full-height left")
+  set_keymap(keymaps.split_full_down, function() splits.split_move_full_down(config) end, "Split full-width down")
+  set_keymap(keymaps.split_full_up, function() splits.split_move_full_up(config) end, "Split full-width up")
 
   -- Split management
   set_keymap(keymaps.close_split, function() splits.close_split(config) end, "Close split")

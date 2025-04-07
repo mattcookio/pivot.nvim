@@ -3,250 +3,181 @@ local M = {}
 -- Module dependencies
 local utils = require('pivot.utils')
 
--- Split current buffer to the right, moving the current buffer if multiple buffers exist
+-- Split current buffer to the right, moving the buffer if a fallback exists for the original window
 function M.split_move_right(opts)
     local current_buf = vim.api.nvim_get_current_buf()
     local current_win = vim.api.nvim_get_current_win()
 
-    -- Count valid, listed buffers to determine if this is the only real buffer
-    local valid_bufs = utils.get_valid_buffers(false)
+    -- 1. Check for Fallback
+    local fallback_buf = utils.get_fallback_buffer(current_win, current_buf)
+    local can_replace_original = fallback_buf and fallback_buf ~= current_buf
 
-    -- Create a new window on the right
+    if can_replace_original and opts.prevent_duplicates then
+        local visible_elsewhere = utils.get_buffers_in_other_windows(current_win)
+        if visible_elsewhere[fallback_buf] then
+            can_replace_original = false -- Cannot use this fallback due to duplicate prevention
+        end
+    end
+
+    -- 2. Split (focus moves to new_win)
     vim.cmd('botright vnew')
     local new_win = vim.api.nvim_get_current_win()
-    local temp_buf = vim.api.nvim_get_current_buf()
+    local temp_buf = vim.api.nvim_get_current_buf() -- Buffer created by :vnew
 
-    if #valid_bufs <= 1 then
-        -- If this is the only real buffer, keep it in the original window
-        -- and leave the new window with an empty buffer (already created by vnew)
-        vim.api.nvim_set_current_win(current_win) -- First focus the original window to ensure buffer stays there
-        -- Then focus the new window (with the empty buffer)
-        vim.api.nvim_set_current_win(new_win)
-    else
-        -- Check if this buffer is already visible in another window (if prevent_duplicates is enabled)
-        local should_move_buffer = true
-        if opts.prevent_duplicates then
-            local visible_bufs = utils.get_buffers_in_other_windows(current_win)
-            -- Don't count the new window we just created
-            if visible_bufs[current_buf] then
-                should_move_buffer = false
+    -- 3. Conditional Move
+    if can_replace_original then
+        -- Move current_buf to new_win
+        vim.api.nvim_win_set_buf(new_win, current_buf)
+
+        -- Set fallback_buf in original window
+        vim.api.nvim_set_current_win(current_win)
+        vim.api.nvim_win_set_buf(current_win, fallback_buf)
+
+        -- Delete the temporary buffer if it's valid and unused
+        if vim.api.nvim_buf_is_valid(temp_buf) then
+            local temp_buf_in_use = false
+            for _, win in ipairs(vim.api.nvim_list_wins()) do
+                if vim.api.nvim_win_get_buf(win) == temp_buf then
+                    temp_buf_in_use = true
+                    break
+                end
             end
-        end
-
-        if should_move_buffer then
-            -- Multiple buffers exist, move current buffer to the new window
-            vim.api.nvim_win_set_buf(new_win, current_buf)
-
-            -- Return to the original window
-            vim.api.nvim_set_current_win(current_win)
-
-            -- Switch to a different buffer in the original window
-            local fallback_buf = utils.get_fallback_buffer(current_win, current_buf)
-
-            if fallback_buf then
-                vim.api.nvim_win_set_buf(current_win, fallback_buf)
-            else
-                -- No other valid buffers, create a new empty one
-                vim.cmd('enew')
+            if not temp_buf_in_use then
+                pcall(vim.api.nvim_buf_delete, temp_buf, { force = true })
             end
-        else
-            -- If we're preventing duplicates and the buffer is already visible,
-            -- just use an empty buffer in the new window (already created by vnew)
-            vim.api.nvim_set_current_win(current_win)
-        end
-
-        -- Delete the temporary buffer that was created by vnew if we're not using it
-        if vim.api.nvim_buf_is_valid(temp_buf) and vim.api.nvim_win_get_buf(new_win) ~= temp_buf then
-            pcall(vim.api.nvim_buf_delete, temp_buf, { force = true })
         end
 
         -- Focus the new window
         vim.api.nvim_set_current_win(new_win)
+    else
+        -- No replacement possible. Leave current_buf in current_win.
+        -- New window (new_win) keeps the empty temp_buf.
+        -- Focus is already on new_win.
     end
 end
 
--- Split current buffer to the left, moving the current buffer if multiple buffers exist
+-- Split current buffer to the left, moving the buffer if a fallback exists for the original window
 function M.split_move_left(opts)
     local current_buf = vim.api.nvim_get_current_buf()
     local current_win = vim.api.nvim_get_current_win()
 
-    -- Count valid, listed buffers to determine if this is the only real buffer
-    local valid_bufs = utils.get_valid_buffers(false)
+    -- 1. Check for Fallback
+    local fallback_buf = utils.get_fallback_buffer(current_win, current_buf)
+    local can_replace_original = fallback_buf and fallback_buf ~= current_buf
 
-    -- Create a new window on the left
+    if can_replace_original and opts.prevent_duplicates then
+        local visible_elsewhere = utils.get_buffers_in_other_windows(current_win)
+        if visible_elsewhere[fallback_buf] then
+            can_replace_original = false
+        end
+    end
+
+    -- 2. Split (focus moves to new_win)
     vim.cmd('topleft vnew')
     local new_win = vim.api.nvim_get_current_win()
     local temp_buf = vim.api.nvim_get_current_buf()
 
-    if #valid_bufs <= 1 then
-        -- If this is the only real buffer, keep it in the original window
-        -- and leave the new window with an empty buffer (already created by vnew)
-        vim.api.nvim_set_current_win(current_win) -- First focus the original window to ensure buffer stays there
-        -- Then focus the new window (with the empty buffer)
-        vim.api.nvim_set_current_win(new_win)
-    else
-        -- Check if this buffer is already visible in another window (if prevent_duplicates is enabled)
-        local should_move_buffer = true
-        if opts.prevent_duplicates then
-            local visible_bufs = utils.get_buffers_in_other_windows(current_win)
-            -- Don't count the new window we just created
-            if visible_bufs[current_buf] then
-                should_move_buffer = false
+    -- 3. Conditional Move
+    if can_replace_original then
+        vim.api.nvim_win_set_buf(new_win, current_buf)
+        vim.api.nvim_set_current_win(current_win)
+        vim.api.nvim_win_set_buf(current_win, fallback_buf)
+
+        if vim.api.nvim_buf_is_valid(temp_buf) then
+            local temp_buf_in_use = false
+            for _, win in ipairs(vim.api.nvim_list_wins()) do
+                if vim.api.nvim_win_get_buf(win) == temp_buf then
+                    temp_buf_in_use = true
+                    break
+                end
+            end
+            if not temp_buf_in_use then
+                pcall(vim.api.nvim_buf_delete, temp_buf, { force = true })
             end
         end
 
-        if should_move_buffer then
-            -- Multiple buffers exist, move current buffer to the new window
-            vim.api.nvim_win_set_buf(new_win, current_buf)
-
-            -- Return to the original window
-            vim.api.nvim_set_current_win(current_win)
-
-            -- Switch to a different buffer in the original window
-            local fallback_buf = utils.get_fallback_buffer(current_win, current_buf)
-
-            if fallback_buf then
-                vim.api.nvim_win_set_buf(current_win, fallback_buf)
-            else
-                -- No other valid buffers, create a new empty one
-                vim.cmd('enew')
-            end
-        else
-            -- If we're preventing duplicates and the buffer is already visible,
-            -- just use an empty buffer in the new window (already created by vnew)
-            vim.api.nvim_set_current_win(current_win)
-        end
-
-        -- Delete the temporary buffer that was created by vnew if we're not using it
-        if vim.api.nvim_buf_is_valid(temp_buf) and vim.api.nvim_win_get_buf(new_win) ~= temp_buf then
-            pcall(vim.api.nvim_buf_delete, temp_buf, { force = true })
-        end
-
-        -- Focus the new window
         vim.api.nvim_set_current_win(new_win)
     end
 end
 
--- Split current buffer below, moving the current buffer if multiple buffers exist
+-- Split current buffer below, moving the buffer if a fallback exists for the original window
 function M.split_move_down(opts)
     local current_buf = vim.api.nvim_get_current_buf()
     local current_win = vim.api.nvim_get_current_win()
 
-    -- Count valid, listed buffers to determine if this is the only real buffer
-    local valid_bufs = utils.get_valid_buffers(false)
+    local fallback_buf = utils.get_fallback_buffer(current_win, current_buf)
+    local can_replace_original = fallback_buf and fallback_buf ~= current_buf
 
-    -- Create a new window below
+    if can_replace_original and opts.prevent_duplicates then
+        local visible_elsewhere = utils.get_buffers_in_other_windows(current_win)
+        if visible_elsewhere[fallback_buf] then
+            can_replace_original = false
+        end
+    end
+
     vim.cmd('botright new')
     local new_win = vim.api.nvim_get_current_win()
     local temp_buf = vim.api.nvim_get_current_buf()
 
-    if #valid_bufs <= 1 then
-        -- If this is the only real buffer, keep it in the original window
-        -- and leave the new window with an empty buffer (already created by new)
-        vim.api.nvim_set_current_win(current_win) -- First focus the original window to ensure buffer stays there
-        -- Then focus the new window (with the empty buffer)
-        vim.api.nvim_set_current_win(new_win)
-    else
-        -- Check if this buffer is already visible in another window (if prevent_duplicates is enabled)
-        local should_move_buffer = true
-        if opts.prevent_duplicates then
-            local visible_bufs = utils.get_buffers_in_other_windows(current_win)
-            -- Don't count the new window we just created
-            if visible_bufs[current_buf] then
-                should_move_buffer = false
+    if can_replace_original then
+        vim.api.nvim_win_set_buf(new_win, current_buf)
+        vim.api.nvim_set_current_win(current_win)
+        vim.api.nvim_win_set_buf(current_win, fallback_buf)
+
+        if vim.api.nvim_buf_is_valid(temp_buf) then
+            local temp_buf_in_use = false
+            for _, win in ipairs(vim.api.nvim_list_wins()) do
+                if vim.api.nvim_win_get_buf(win) == temp_buf then
+                    temp_buf_in_use = true
+                    break
+                end
+            end
+            if not temp_buf_in_use then
+                pcall(vim.api.nvim_buf_delete, temp_buf, { force = true })
             end
         end
 
-        if should_move_buffer then
-            -- Multiple buffers exist, move current buffer to the new window
-            vim.api.nvim_win_set_buf(new_win, current_buf)
-
-            -- Return to the original window
-            vim.api.nvim_set_current_win(current_win)
-
-            -- Switch to a different buffer in the original window
-            local fallback_buf = utils.get_fallback_buffer(current_win, current_buf)
-
-            if fallback_buf then
-                vim.api.nvim_win_set_buf(current_win, fallback_buf)
-            else
-                -- No other valid buffers, create a new empty one
-                vim.cmd('enew')
-            end
-        else
-            -- If we're preventing duplicates and the buffer is already visible,
-            -- just use an empty buffer in the new window (already created by new)
-            vim.api.nvim_set_current_win(current_win)
-        end
-
-        -- Delete the temporary buffer that was created by new if we're not using it
-        if vim.api.nvim_buf_is_valid(temp_buf) and vim.api.nvim_win_get_buf(new_win) ~= temp_buf then
-            pcall(vim.api.nvim_buf_delete, temp_buf, { force = true })
-        end
-
-        -- Focus the new window
         vim.api.nvim_set_current_win(new_win)
     end
 end
 
--- Split current buffer above, moving the current buffer if multiple buffers exist
+-- Split current buffer above, moving the buffer if a fallback exists for the original window
 function M.split_move_up(opts)
     local current_buf = vim.api.nvim_get_current_buf()
     local current_win = vim.api.nvim_get_current_win()
 
-    -- Count valid, listed buffers to determine if this is the only real buffer
-    local valid_bufs = utils.get_valid_buffers(false)
+    local fallback_buf = utils.get_fallback_buffer(current_win, current_buf)
+    local can_replace_original = fallback_buf and fallback_buf ~= current_buf
 
-    -- Create a new window above
+    if can_replace_original and opts.prevent_duplicates then
+        local visible_elsewhere = utils.get_buffers_in_other_windows(current_win)
+        if visible_elsewhere[fallback_buf] then
+            can_replace_original = false
+        end
+    end
+
     vim.cmd('topleft new')
     local new_win = vim.api.nvim_get_current_win()
     local temp_buf = vim.api.nvim_get_current_buf()
 
-    if #valid_bufs <= 1 then
-        -- If this is the only real buffer, keep it in the original window
-        -- and leave the new window with an empty buffer (already created by new)
-        vim.api.nvim_set_current_win(current_win) -- First focus the original window to ensure buffer stays there
-        -- Then focus the new window (with the empty buffer)
-        vim.api.nvim_set_current_win(new_win)
-    else
-        -- Check if this buffer is already visible in another window (if prevent_duplicates is enabled)
-        local should_move_buffer = true
-        if opts.prevent_duplicates then
-            local visible_bufs = utils.get_buffers_in_other_windows(current_win)
-            -- Don't count the new window we just created
-            if visible_bufs[current_buf] then
-                should_move_buffer = false
+    if can_replace_original then
+        vim.api.nvim_win_set_buf(new_win, current_buf)
+        vim.api.nvim_set_current_win(current_win)
+        vim.api.nvim_win_set_buf(current_win, fallback_buf)
+
+        if vim.api.nvim_buf_is_valid(temp_buf) then
+            local temp_buf_in_use = false
+            for _, win in ipairs(vim.api.nvim_list_wins()) do
+                if vim.api.nvim_win_get_buf(win) == temp_buf then
+                    temp_buf_in_use = true
+                    break
+                end
+            end
+            if not temp_buf_in_use then
+                pcall(vim.api.nvim_buf_delete, temp_buf, { force = true })
             end
         end
 
-        if should_move_buffer then
-            -- Multiple buffers exist, move current buffer to the new window
-            vim.api.nvim_win_set_buf(new_win, current_buf)
-
-            -- Return to the original window
-            vim.api.nvim_set_current_win(current_win)
-
-            -- Switch to a different buffer in the original window
-            local fallback_buf = utils.get_fallback_buffer(current_win, current_buf)
-
-            if fallback_buf then
-                vim.api.nvim_win_set_buf(current_win, fallback_buf)
-            else
-                -- No other valid buffers, create a new empty one
-                vim.cmd('enew')
-            end
-        else
-            -- If we're preventing duplicates and the buffer is already visible,
-            -- just use an empty buffer in the new window (already created by new)
-            vim.api.nvim_set_current_win(current_win)
-        end
-
-        -- Delete the temporary buffer that was created by new if we're not using it
-        if vim.api.nvim_buf_is_valid(temp_buf) and vim.api.nvim_win_get_buf(new_win) ~= temp_buf then
-            pcall(vim.api.nvim_buf_delete, temp_buf, { force = true })
-        end
-
-        -- Focus the new window
         vim.api.nvim_set_current_win(new_win)
     end
 end
@@ -435,6 +366,140 @@ end
 -- Navigate to the split above
 function M.navigate_up(opts)
     M.navigate_split('k', opts)
+end
+
+-- *** Full-Span Split Functions ***
+
+-- Split full-height right, moving buffer if fallback exists
+function M.split_move_full_right(opts)
+    local current_buf = vim.api.nvim_get_current_buf()
+    local current_win = vim.api.nvim_get_current_win()
+
+    local fallback_buf = utils.get_fallback_buffer(current_win, current_buf)
+    local can_replace_original = fallback_buf and fallback_buf ~= current_buf
+    if can_replace_original and opts.prevent_duplicates then
+        local visible_elsewhere = utils.get_buffers_in_other_windows(current_win)
+        if visible_elsewhere[fallback_buf] then can_replace_original = false end
+    end
+
+    vim.cmd('vnew') -- Use plain vnew (attempts larger split)
+    local new_win = vim.api.nvim_get_current_win()
+    local temp_buf = vim.api.nvim_get_current_buf()
+
+    if can_replace_original then
+        vim.api.nvim_win_set_buf(new_win, current_buf)
+        vim.api.nvim_set_current_win(current_win)
+        vim.api.nvim_win_set_buf(current_win, fallback_buf)
+        if vim.api.nvim_buf_is_valid(temp_buf) then
+            local temp_buf_in_use = false
+            for _, win in ipairs(vim.api.nvim_list_wins()) do
+                if vim.api.nvim_win_get_buf(win) == temp_buf then
+                    temp_buf_in_use = true; break
+                end
+            end
+            if not temp_buf_in_use then pcall(vim.api.nvim_buf_delete, temp_buf, { force = true }) end
+        end
+        vim.api.nvim_set_current_win(new_win)
+    end
+end
+
+-- Split full-height left, moving buffer if fallback exists
+function M.split_move_full_left(opts)
+    local current_buf = vim.api.nvim_get_current_buf()
+    local current_win = vim.api.nvim_get_current_win()
+
+    local fallback_buf = utils.get_fallback_buffer(current_win, current_buf)
+    local can_replace_original = fallback_buf and fallback_buf ~= current_buf
+    if can_replace_original and opts.prevent_duplicates then
+        local visible_elsewhere = utils.get_buffers_in_other_windows(current_win)
+        if visible_elsewhere[fallback_buf] then can_replace_original = false end
+    end
+
+    vim.cmd('vert vnew') -- Use plain vert vnew (attempts larger split left)
+    local new_win = vim.api.nvim_get_current_win()
+    local temp_buf = vim.api.nvim_get_current_buf()
+
+    if can_replace_original then
+        vim.api.nvim_win_set_buf(new_win, current_buf)
+        vim.api.nvim_set_current_win(current_win)
+        vim.api.nvim_win_set_buf(current_win, fallback_buf)
+        if vim.api.nvim_buf_is_valid(temp_buf) then
+            local temp_buf_in_use = false
+            for _, win in ipairs(vim.api.nvim_list_wins()) do
+                if vim.api.nvim_win_get_buf(win) == temp_buf then
+                    temp_buf_in_use = true; break
+                end
+            end
+            if not temp_buf_in_use then pcall(vim.api.nvim_buf_delete, temp_buf, { force = true }) end
+        end
+        vim.api.nvim_set_current_win(new_win)
+    end
+end
+
+-- Split full-width down, moving buffer if fallback exists
+function M.split_move_full_down(opts)
+    local current_buf = vim.api.nvim_get_current_buf()
+    local current_win = vim.api.nvim_get_current_win()
+
+    local fallback_buf = utils.get_fallback_buffer(current_win, current_buf)
+    local can_replace_original = fallback_buf and fallback_buf ~= current_buf
+    if can_replace_original and opts.prevent_duplicates then
+        local visible_elsewhere = utils.get_buffers_in_other_windows(current_win)
+        if visible_elsewhere[fallback_buf] then can_replace_original = false end
+    end
+
+    vim.cmd('new') -- Use plain new (attempts larger split down)
+    local new_win = vim.api.nvim_get_current_win()
+    local temp_buf = vim.api.nvim_get_current_buf()
+
+    if can_replace_original then
+        vim.api.nvim_win_set_buf(new_win, current_buf)
+        vim.api.nvim_set_current_win(current_win)
+        vim.api.nvim_win_set_buf(current_win, fallback_buf)
+        if vim.api.nvim_buf_is_valid(temp_buf) then
+            local temp_buf_in_use = false
+            for _, win in ipairs(vim.api.nvim_list_wins()) do
+                if vim.api.nvim_win_get_buf(win) == temp_buf then
+                    temp_buf_in_use = true; break
+                end
+            end
+            if not temp_buf_in_use then pcall(vim.api.nvim_buf_delete, temp_buf, { force = true }) end
+        end
+        vim.api.nvim_set_current_win(new_win)
+    end
+end
+
+-- Split full-width up, moving buffer if fallback exists
+function M.split_move_full_up(opts)
+    local current_buf = vim.api.nvim_get_current_buf()
+    local current_win = vim.api.nvim_get_current_win()
+
+    local fallback_buf = utils.get_fallback_buffer(current_win, current_buf)
+    local can_replace_original = fallback_buf and fallback_buf ~= current_buf
+    if can_replace_original and opts.prevent_duplicates then
+        local visible_elsewhere = utils.get_buffers_in_other_windows(current_win)
+        if visible_elsewhere[fallback_buf] then can_replace_original = false end
+    end
+
+    vim.cmd('topleft new') -- Use topleft new (attempts larger split up)
+    local new_win = vim.api.nvim_get_current_win()
+    local temp_buf = vim.api.nvim_get_current_buf()
+
+    if can_replace_original then
+        vim.api.nvim_win_set_buf(new_win, current_buf)
+        vim.api.nvim_set_current_win(current_win)
+        vim.api.nvim_win_set_buf(current_win, fallback_buf)
+        if vim.api.nvim_buf_is_valid(temp_buf) then
+            local temp_buf_in_use = false
+            for _, win in ipairs(vim.api.nvim_list_wins()) do
+                if vim.api.nvim_win_get_buf(win) == temp_buf then
+                    temp_buf_in_use = true; break
+                end
+            end
+            if not temp_buf_in_use then pcall(vim.api.nvim_buf_delete, temp_buf, { force = true }) end
+        end
+        vim.api.nvim_set_current_win(new_win)
+    end
 end
 
 return M

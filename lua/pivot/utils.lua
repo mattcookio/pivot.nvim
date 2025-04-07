@@ -72,9 +72,7 @@ M.get_valid_buffers = function(skip_visible)
 end
 
 -- Record a buffer in the window's history
-M.record_buffer = function(win, buf, limit)
-    limit = limit or 10
-
+M.record_buffer = function(win, buf)
     -- Skip terminals and non-listed buffers
     if not vim.api.nvim_buf_is_valid(buf) or
         M.safe_get_buf_option(buf, 'terminal') or
@@ -87,6 +85,16 @@ M.record_buffer = function(win, buf, limit)
         M.window_buffer_history[win] = {}
     end
 
+    -- Clean up any invalid buffers from history
+    for i = #M.window_buffer_history[win], 1, -1 do
+        local history_buf = M.window_buffer_history[win][i]
+        if not vim.api.nvim_buf_is_valid(history_buf) or
+            M.safe_get_buf_option(history_buf, 'terminal') or
+            not M.safe_get_buf_option(history_buf, 'buflisted') then
+            table.remove(M.window_buffer_history[win], i)
+        end
+    end
+
     -- Check if buffer is already in history, and remove it to avoid duplicates
     for i, history_buf in ipairs(M.window_buffer_history[win]) do
         if history_buf == buf then
@@ -97,11 +105,6 @@ M.record_buffer = function(win, buf, limit)
 
     -- Add the buffer to the start of the history list
     table.insert(M.window_buffer_history[win], 1, buf)
-
-    -- Trim the history to the limit
-    while #M.window_buffer_history[win] > limit do
-        table.remove(M.window_buffer_history[win])
-    end
 end
 
 -- Get a fallback buffer for a window, using history or valid buffers
@@ -172,7 +175,7 @@ M.setup_autocmds = function(options)
             callback = function()
                 local win = vim.api.nvim_get_current_win()
                 local buf = vim.api.nvim_get_current_buf()
-                M.record_buffer(win, buf, options.history_limit)
+                M.record_buffer(win, buf)
             end,
         })
 
@@ -230,7 +233,7 @@ M.record_buffer_legacy = function()
     local win = vim.api.nvim_get_current_win()
     local buf = vim.api.nvim_get_current_buf()
     local limit = M._options and M._options.history_limit or 10
-    M.record_buffer(win, buf, limit)
+    M.record_buffer(win, buf)
 end
 
 -- Legacy cleanup for older Neovim versions
