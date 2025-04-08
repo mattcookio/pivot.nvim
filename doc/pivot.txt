@@ -94,8 +94,6 @@ The following commands are available:
     :PivotCloseOthers    - Close all other buffers
     :PivotCloseAll       - Close all buffers
 
-    :PivotMerge {dir}    - Merge buffer into direction (h/j/k/l)
-    :PivotMove {dir}     - Move buffer to split in direction (h/j/k/l)
     :PivotNavigate {dir} - Navigate buffers (next/prev)
 
 3.3 Functions                                              *pivot-functions*
@@ -118,8 +116,6 @@ All functions are available through the Lua API:
     pivot.close_all_splits()      -- Close all splits, keeping one
 
     -- Window/buffer operations
-    pivot.move_buffer_to_split(direction)   -- Move buffer to split (h/j/k/l)
-    pivot.merge_buffer_direction(direction) -- Merge into adjacent split (h/j/k/l)
 
     -- Navigation
     pivot.navigate_all_buffers(direction)   -- Navigate buffers (next/prev)
@@ -155,12 +151,6 @@ to customize:
       { desc = 'Close other buffers' })
     vim.keymap.set('n', '<leader>ba', function() require('pivot').close_all_buffers() end, 
       { desc = 'Close all buffers' })
-
-    -- Move buffer to split
-    vim.keymap.set('n', '<leader>bl', function() require('pivot').move_buffer_to_split('l') end, 
-      { desc = 'Move buffer to right split' })
-    vim.keymap.set('n', '<leader>bh', function() require('pivot').move_buffer_to_split('h') end, 
-      { desc = 'Move buffer to left split' })
 
     -- Buffer navigation
     vim.keymap.set('n', '<C-h>', function() require('pivot').navigate_all_buffers('prev') end, 

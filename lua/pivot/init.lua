@@ -38,9 +38,6 @@ M.split_move_up = function() splits.split_move_up(config.options) end
 M.split_move_down = function() splits.split_move_down(config.options) end
 M.smart_split = function(direction) splits.smart_split(direction, config.options) end
 
--- Merge / Move operations
-M.move_buffer_to_split = function(direction) splits.move_buffer_to_split(direction, config.options) end
-
 -- Split management
 M.close_split = function() splits.close_split(config.options) end
 M.close_other_splits = function() splits.close_other_splits(config.options) end

@@ -13,7 +13,7 @@ M.defaults = {
     split_right = '<leader>sl',
     split_left = '<leader>sh',
     split_down = '<leader>sj',
-    split_up = '<leader>sk',
+    split_up = '<leader>sk', -- (:new or merge)
 
     -- Split management
     close_split = '<leader>sd',
@@ -24,12 +24,6 @@ M.defaults = {
     close_buffer = '<leader>bd',
     close_other_buffers = '<leader>bo',
     close_all_buffers = '<leader>ba',
-
-    -- Move buffer to different split
-    move_to_right = '<leader>bl',
-    move_to_left = '<leader>bh',
-    move_to_down = '<leader>bj',
-    move_to_up = '<leader>bk',
 
     -- Buffer navigation (skips buffers visible in other windows)
     prev_buffer = '<C-h>',

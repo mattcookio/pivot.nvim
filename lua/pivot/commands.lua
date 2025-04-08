@@ -63,11 +63,6 @@ function M.register_commands(config)
 
   -- Commands with arguments
   local commands_with_args = {
-    [prefix .. "Move"] = {
-      function(opts) splits.move_buffer_to_split(opts.args, config) end,
-      desc = "Move buffer to split in specified direction (h/j/k/l)",
-      nargs = 1
-    },
     [prefix .. "Navigate"] = {
       function(opts) buffers.navigate_all_buffers(opts.args, config) end,
       desc = "Navigate buffers (next/prev) that are not in other windows",
@@ -138,10 +133,8 @@ function M.setup_keymaps(config)
   set_keymap(keymaps.close_split, function() splits.close_split(config) end, "Close split")
   set_keymap(keymaps.close_other_splits, function() splits.close_other_splits(config) end, "Close other splits")
   set_keymap(keymaps.close_all_splits, function() splits.close_all_splits(config) end, "Close all splits")
-  set_keymap(keymaps.move_to_right, function() splits.move_buffer_to_split('l', config) end, "Move buffer to right split")
-  set_keymap(keymaps.move_to_left, function() splits.move_buffer_to_split('h', config) end, "Move buffer to left split")
-  set_keymap(keymaps.move_to_down, function() splits.move_buffer_to_split('j', config) end, "Move buffer to lower split")
-  set_keymap(keymaps.move_to_up, function() splits.move_buffer_to_split('k', config) end, "Move buffer to upper split")
+
+  -- Buffer navigation
   set_keymap(keymaps.prev_buffer, function() buffers.navigate_all_buffers('prev', config) end, "Previous buffer")
   set_keymap(keymaps.next_buffer, function() buffers.navigate_all_buffers('next', config) end, "Next buffer")
   set_keymap(keymaps.alt_prev_buffer, function() buffers.navigate_all_buffers('prev', config) end,

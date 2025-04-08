@@ -19,7 +19,6 @@
   | **Buffers** | `<leader>bd/bo/ba` | Close buffer / close others / close all |
   | | `<C-h>/<C-l>` or `<C-k>/<C-j>` | Navigate prev/next buffer |
   | **Navigation** | `<C-D-h>/<C-D-l>/<C-D-j>/<C-D-k>` | Navigate between splits |
-  | **Movement** | `<leader>bl/bh/bj/bk` | Move buffer to split |
 - **Get started:** `require('pivot').setup()`
 
 ## ✨ What is pivot.nvim?
@@ -202,7 +201,6 @@ After every split creation command, pivot.nvim attempts to equalize all window s
 - `<leader>ba`: Close all buffers
 - `<C-h>` / `<C-l>` or `<C-k>` / `<C-j>`: Navigate prev/next buffer
 - `<C-D-h>/<C-D-l>/<C-D-j>/<C-D-k>`: Navigate between splits
-- `<leader>bl/bh/bj/bk`: Move buffer to split
 
 ### 📄 Buffer Management
 
@@ -214,47 +212,22 @@ Manage buffers like a pro:
 - `<C-h>` / `<C-k>` - Go to previous buffer
 - `<C-l>` / `<C-j>` - Go to next buffer
 
-### 🔀 Buffer Movement
-
-Move buffers between splits:
-
-<details>
-<summary>Show buffer movement diagram</summary>
-
-```
-+--------+--------+                +--------+--------+
-|        |        |   Move Right   |        |        |
-| Buffer |   B2   |   --------->   |   B2   | Buffer |
-|   A    |        |                |        |   A    |
-+--------+--------+                +--------+--------+
-```
-
-</details>
-
-Commands:
-
-- `<leader>bl` - Move buffer to right split
-- `<leader>bh` - Move buffer to left split
-- `<leader>bj` - Move buffer to split below
-- `<leader>bk` - Move buffer to split above
-
 ## ⌨️ Vim Commands
 
 <details>
 <summary>Show all available Vim commands (default prefix: Pivot)</summary>
 
 ```
-:PivotSplitRight/Left                  - Split vertically (:vnew) or merge (prompts visually if ambiguous)
+:PivotSplitRight/Left                 - Split vertically (:vnew) or merge (prompts visually if ambiguous)
 :PivotSplitDown/Up                    - Split horizontally (:new) or merge (prompts visually if ambiguous)
 :PivotCloseSplit                      - Close current split
 :PivotCloseOtherSplits                - Close all splits except current
 :PivotCloseAllSplits                  - Close all splits
 :PivotCloseBuffer                     - Close buffer smartly
 :PivotCloseOthers                     - Close all other buffers
-:PivotCloseAll                      - Close all buffers
-:PivotMove {dir}                      - Move buffer to split in direction (h/j/k/l)
+:PivotCloseAll                        - Close all buffers
 :PivotNavigate {dir}                  - Navigate buffers (next/prev)
-:PivotNavigateSplit {dir}             - Navigate to split in direction (left/right/up/down or h/j/k/l)
+:PivotNavigateSplit {dir}             - Navigate to split in direction
 ```
 
 </details>
