@@ -11,11 +11,10 @@ CONTENTS                                                        *pivot-contents*
     3.3 Functions ............................ |pivot-functions|
     3.4 Example Mappings ..................... |pivot-example-mappings|
   4. Features ................................ |pivot-features|
-    4.1 Smart Split Creation ................. |pivot-smart-split-creation|
-    4.2 Context-Aware Smart Split ............ |pivot-smart-split|
-    4.3 Buffer History Tracking .............. |pivot-history-tracking|
-    4.4 Smart Buffer Closing ................. |pivot-smart-close|
-    4.5 Split/Buffer Command Parity .......... |pivot-command-parity|
+    4.1 Smart Split/Merge .................... |pivot-smart-split-merge|
+    4.2 Buffer History Tracking .............. |pivot-history-tracking|
+    4.3 Smart Buffer Closing ................. |pivot-smart-close|
+    4.4 Split/Buffer Command Parity .......... |pivot-command-parity|
   5. Health Checks ........................... |pivot-health|
   6. License ................................. |pivot-license|
   7. Changelog ............................... |pivot-changelog|
@@ -65,9 +64,7 @@ To initialize the plugin with default settings:
 With custom configuration:
 >
     require('pivot').setup({
-      auto_record_history = true,  -- Track buffer history automatically
-      history_limit = 10,          -- Number of buffers to keep in history
-      smart_splits = true,         -- Create or merge splits based on context
+      smart_splits = true,         -- Allow splits to merge into adjacent windows
       smart_close = true,          -- Smart buffer closing with layout preservation
       prevent_duplicates = true,   -- Avoid duplicate buffer views
       
@@ -84,15 +81,10 @@ With custom configuration:
 
 The following commands are available:
 
-    :PivotSplitRight     - Split right, moving current buffer if multiple exist
-    :PivotSplitLeft      - Split left, moving current buffer if multiple exist
-    :PivotSplitUp        - Split up, moving current buffer if multiple exist
-    :PivotSplitDown      - Split down, moving current buffer if multiple exist
-
-    :PivotSmartSplitRight - Smart split right (or merge if split exists)
-    :PivotSmartSplitLeft  - Smart split left (or merge if split exists)
-    :PivotSmartSplitUp    - Smart split up (or merge if split exists)
-    :PivotSmartSplitDown  - Smart split down (or merge if split exists)
+    :PivotSplitRight     - Split right (standard layout) or merge
+    :PivotSplitLeft      - Split left (standard layout) or merge
+    :PivotSplitUp        - Split up (standard layout) or merge
+    :PivotSplitDown      - Split down (standard layout) or merge
 
     :PivotCloseSplit     - Close current split
     :PivotCloseOtherSplits - Close all splits except current one
@@ -112,14 +104,8 @@ All functions are available through the Lua API:
 >
     local pivot = require('pivot')
 
-    -- Split functions
-    pivot.split_move_right()  -- Split right, moving current buffer
-    pivot.split_move_left()   -- Split left, moving current buffer
-    pivot.split_move_up()     -- Split up, moving current buffer
-    pivot.split_move_down()   -- Split down, moving current buffer
-    
-    -- Smart split function (context-aware)
-    pivot.smart_split(direction)  -- Creates split or merges based on context
+    -- Split/Merge function (handles both)
+    pivot.smart_split(direction)  -- Creates standard split or merges based on context
 
     -- Buffer management
     pivot.close_buffer()          -- Close current buffer (smart)
@@ -141,17 +127,18 @@ All functions are available through the Lua API:
 
 3.4 Example Mappings                                *pivot-example-mappings*
 
-Here are some example mappings:
+Default keymaps are setup automatically. Here are some examples if you wish
+to customize:
 >
-    -- Split mappings (uses smart split by default)
+    -- Split/Merge mappings
     vim.keymap.set('n', '<leader>sl', function() require('pivot').smart_split('l') end, 
-      { desc = 'Smart split right (or merge)' })
+      { desc = 'Split right (standard) or merge' })
     vim.keymap.set('n', '<leader>sh', function() require('pivot').smart_split('h') end, 
-      { desc = 'Smart split left (or merge)' })
+      { desc = 'Split left (standard) or merge' })
     vim.keymap.set('n', '<leader>sj', function() require('pivot').smart_split('j') end, 
-      { desc = 'Smart split down (or merge)' })
+      { desc = 'Split down (standard) or merge' })
     vim.keymap.set('n', '<leader>sk', function() require('pivot').smart_split('k') end, 
-      { desc = 'Smart split up (or merge)' })
+      { desc = 'Split up (standard) or merge' })
 
     -- Split management (with parallel mapping to buffer management)
     vim.keymap.set('n', '<leader>sd', function() require('pivot').close_split() end, 
@@ -185,48 +172,37 @@ Here are some example mappings:
 ================================================================================
 4. FEATURES                                                  *pivot-features*
 
-4.1 Smart Split Creation                              *pivot-smart-split-creation*
+4.1 Smart Split / Merge                             *pivot-smart-split-merge*
 
-When creating a split with only one buffer open:
-- The buffer stays in the original window
-- A new empty buffer is created in the new split
+The |:PivotSplitRight|, |:PivotSplitLeft|, |:PivotSplitUp|, and
+|:PivotSplitDown| commands (and their corresponding default keymaps
+|<leader>sl|, |<leader>sh|, |<leader>sk|, |<leader>sj|) provide context-aware
+splitting and merging:
 
-When creating a split with multiple buffers open:
-- The current buffer moves to the new split
-- The original window shows another buffer from history
+1. Merging:
+   - If the `smart_splits` option is enabled (default: true) and one or more
+     windows exist adjacent to the current window in the target direction,
+     you will be prompted visually to select a window to merge into.
+   - A number overlay appears over each candidate window, and other windows
+     are dimmed.
+   - Press the corresponding number to merge, or Esc to cancel.
+   - If only one adjacent window exists, the merge happens automatically.
 
-4.2 Context-Aware Smart Split                                *pivot-smart-split*
+2. Splitting:
+   - If merging is not possible (no adjacent window or `smart_splits` is false),
+     a new split is created using standard Vim split geometry:
+       - Right/Left use |:vnew| (respecting current window height).
+       - Down/Up use |:new| (respecting current window width).
+   - The plugin handles moving the current buffer to the new split and finding a
+     fallback buffer for the original window.
 
-The pivot.smart_split(direction) function intelligently handles splits:
+4.2 Buffer History Tracking                              *pivot-history-tracking*
 
-1. If a split exists in the specified direction:
-   - Merges the current buffer into that split (moves + closes current window)
-   - This eliminates the need for separate merge commands
+Each window keeps track of previously viewed buffers. This history is used to:
+- Provide better fallback options when closing buffers or creating splits.
+- History is unlimited and buffers that no longer exist are automatically removed.
 
-2. If no split exists in the specified direction:
-   - Creates a new split in that direction using the split_move functions
-   - Handles buffer movement intelligently based on buffer count
-
-Commands:
-- :PivotSmartSplitRight - Split right or merge right if a split exists
-- :PivotSmartSplitLeft  - Split left or merge left if a split exists
-- :PivotSmartSplitUp    - Split up or merge up if a split exists
-- :PivotSmartSplitDown  - Split down or merge down if a split exists
-
-Example mapping:
->
-    vim.keymap.set('n', '<leader>sl', function() 
-      require('pivot').smart_split('l') 
-    end, { desc = 'Smart split right (or merge)' })
-<
-
-4.3 Buffer History Tracking                              *pivot-history-tracking*
-
-Each window keeps track of previously viewed buffers, enabling smart behaviors:
-- Better fallback options when closing buffers
-- Smart buffer switching when creating splits
-
-4.4 Smart Buffer Closing                                       *pivot-smart-close*
+4.3 Smart Buffer Closing                                       *pivot-smart-close*
 
 The pivot.close_buffer() function provides intelligent buffer closing:
 
@@ -248,7 +224,7 @@ The pivot.close_buffer() function provides intelligent buffer closing:
 This approach preserves a clean window layout by eliminating empty or 
 duplicate windows while maintaining your editing context.
 
-4.5 Split/Buffer Command Parity                           *pivot-command-parity*
+4.4 Split/Buffer Command Parity                           *pivot-command-parity*
 
 The plugin provides parallel commands for both split and buffer management:
 

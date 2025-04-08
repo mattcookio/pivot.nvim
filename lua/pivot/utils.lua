@@ -6,11 +6,39 @@ M.window_buffer_history = {}
 -- Track buffers loaded
 M.loaded_buffers = {}
 
+-- Store original window highlights during dimming
+local dimmed_windows = {} -- { win_id = original_winhighlight }
+
+-- Define the highlight group for dimmed windows (link to Comment by default)
+function M.define_dim_highlight()
+    -- Link PivotDimWindow to Comment if not already defined
+    vim.cmd("silent! highlight default link PivotDimWindow Comment")
+end
+
+-- Apply dimming highlight to a window
+function M.dim_window(win_id)
+    if not win_id or not vim.api.nvim_win_is_valid(win_id) then return end
+    local current_hl = vim.api.nvim_win_get_option(win_id, 'winhighlight')
+    dimmed_windows[win_id] = current_hl -- Store original
+    -- Dim Normal text, keep FloatBornder potentially for floats over dimmed area
+    vim.api.nvim_win_set_option(win_id, 'winhighlight', 'Normal:PivotDimWindow,FloatBorder:FloatBorder')
+end
+
+-- Clear dimming highlight from all dimmed windows
+function M.clear_dimming()
+    for win_id, original_hl in pairs(dimmed_windows) do
+        if vim.api.nvim_win_is_valid(win_id) then
+            pcall(vim.api.nvim_win_set_option, win_id, 'winhighlight', original_hl)
+        end
+    end
+    dimmed_windows = {} -- Reset the tracker
+end
+
 -- Check Neovim version for API compatibility
 M.is_nvim_07_or_later = (function()
     -- Try to get version using vim.version()
-    local v = vim.version and vim.version()
-    if v and (v.major > 0 or (v.major == 0 and v.minor >= 7)) then
+    local nvim_version = vim.version and vim.version()
+    if nvim_version and (nvim_version.major > 0 or (nvim_version.major == 0 and nvim_version.minor >= 7)) then
         return true
     end
 
@@ -39,36 +67,6 @@ end
 M.create_empty_buffer = function()
     local buf = vim.api.nvim_create_buf(false, true)
     return buf
-end
-
--- Get a list of valid buffers, optionally skipping those visible in windows
-M.get_valid_buffers = function(skip_visible)
-    local buffers = {}
-    local visible_buffers = {}
-
-    -- If we need to skip visible buffers, collect them first
-    if skip_visible then
-        for _, win in ipairs(vim.api.nvim_list_wins()) do
-            if vim.api.nvim_win_is_valid(win) then
-                local buf = vim.api.nvim_win_get_buf(win)
-                visible_buffers[buf] = true
-            end
-        end
-    end
-
-    -- Collect valid buffers
-    for _, buf in ipairs(vim.api.nvim_list_bufs()) do
-        if vim.api.nvim_buf_is_valid(buf) and
-            not M.safe_get_buf_option(buf, 'terminal') and
-            M.safe_get_buf_option(buf, 'buflisted') then
-            -- Skip visible buffers if requested
-            if not (skip_visible and visible_buffers[buf]) then
-                table.insert(buffers, buf)
-            end
-        end
-    end
-
-    return buffers
 end
 
 -- Record a buffer in the window's history
@@ -232,7 +230,6 @@ end
 M.record_buffer_legacy = function()
     local win = vim.api.nvim_get_current_win()
     local buf = vim.api.nvim_get_current_buf()
-    local limit = M._options and M._options.history_limit or 10
     M.record_buffer(win, buf)
 end
 
@@ -341,23 +338,54 @@ M.is_terminal_buffer = function(buf)
     return status and buftype == 'terminal'
 end
 
--- Helper function to check if a split exists in a given direction
-function M.split_exists_in_direction(direction)
-    local current_win = vim.api.nvim_get_current_win()
+-- Helper function to find all neighboring windows in a given direction
+function M.get_neighboring_windows(direction)
+    local neighbors = {}
+    local current_win_id = vim.api.nvim_get_current_win()
+    local current_pos = vim.api.nvim_win_get_position(current_win_id)
+    local current_width = vim.api.nvim_win_get_width(current_win_id)
+    local current_height = vim.api.nvim_win_get_height(current_win_id)
 
-    -- Try to navigate to the window in the specified direction
-    vim.cmd("wincmd " .. direction)
+    local current_top = current_pos[1]
+    local current_bottom = current_pos[1] + current_height
+    local current_left = current_pos[2]
+    local current_right = current_pos[2] + current_width
 
-    -- Check if we moved to a different window
-    local new_win = vim.api.nvim_get_current_win()
-    local exists = current_win ~= new_win
+    local tolerance = 2 -- Allow edges to be within 2 units
 
-    -- Go back to the original window if we moved
-    if exists then
-        vim.cmd("wincmd p")
+    for _, win_id in ipairs(vim.api.nvim_list_wins()) do
+        if win_id ~= current_win_id and vim.api.nvim_win_is_valid(win_id) then
+            local pos = vim.api.nvim_win_get_position(win_id)
+            local width = vim.api.nvim_win_get_width(win_id)
+            local height = vim.api.nvim_win_get_height(win_id)
+
+            local other_top = pos[1]
+            local other_bottom = pos[1] + height
+            local other_left = pos[2]
+            local other_right = pos[2] + width
+
+            local vertical_overlap = math.max(current_top, other_top) < math.min(current_bottom, other_bottom)
+            local horizontal_overlap = math.max(current_left, other_left) < math.min(current_right, other_right)
+
+            -- Check edge proximity within tolerance
+            local is_left_edge_proximate = math.abs(current_left - other_right) <= tolerance
+            local is_right_edge_proximate = math.abs(other_left - current_right) <= tolerance
+            local is_up_edge_proximate = math.abs(current_top - other_bottom) <= tolerance
+            local is_down_edge_proximate = math.abs(other_top - current_bottom) <= tolerance
+
+            -- Check if the window is a neighbor in the specified direction
+            local is_left_neighbor = direction == 'h' and is_left_edge_proximate and vertical_overlap
+            local is_right_neighbor = direction == 'l' and is_right_edge_proximate and vertical_overlap
+            local is_up_neighbor = direction == 'k' and is_up_edge_proximate and horizontal_overlap
+            local is_down_neighbor = direction == 'j' and is_down_edge_proximate and horizontal_overlap
+
+            if is_left_neighbor or is_right_neighbor or is_up_neighbor or is_down_neighbor then
+                table.insert(neighbors, win_id) -- Add matching window ID to list
+            end
+        end
     end
 
-    return exists
+    return neighbors -- Return the list of neighbors
 end
 
 -- Find buffers visible in windows other than the specified one

@@ -13,10 +13,11 @@ M.setup = function(user_config)
   -- Initialize configuration
   config.setup(user_config)
 
-  -- Set up buffer history tracking
-  if config.options.auto_record_history then
-    utils.setup_autocmds(config.options)
-  end
+  -- Define custom highlight groups
+  utils.define_dim_highlight()
+
+  -- Set up buffer history tracking (always enabled now)
+  utils.setup_autocmds(config.options) -- Always call setup
 
   -- Register commands
   commands.register_commands(config.options)
@@ -30,21 +31,14 @@ end
 
 -- Export all functions for individual use
 
--- Split operations (Layout-Aware)
+-- Split operations
 M.split_move_right = function() splits.split_move_right(config.options) end
 M.split_move_left = function() splits.split_move_left(config.options) end
 M.split_move_up = function() splits.split_move_up(config.options) end
 M.split_move_down = function() splits.split_move_down(config.options) end
 M.smart_split = function(direction) splits.smart_split(direction, config.options) end
 
--- Split operations (Full-Span)
-M.split_move_full_right = function() splits.split_move_full_right(config.options) end
-M.split_move_full_left = function() splits.split_move_full_left(config.options) end
-M.split_move_full_up = function() splits.split_move_full_up(config.options) end
-M.split_move_full_down = function() splits.split_move_full_down(config.options) end
-
 -- Merge / Move operations
-M.merge_buffer_direction = function(direction) splits.merge_buffer_direction(direction, config.options) end
 M.move_buffer_to_split = function(direction) splits.move_buffer_to_split(direction, config.options) end
 
 -- Split management
@@ -74,8 +68,5 @@ M.get_valid_buffers = function(skip_visible) return utils.get_valid_buffers(skip
 
 -- Version information
 M.version = "1.0.2"
-
--- Call setup with empty config to ensure defaults are applied
-M.setup({})
 
 return M

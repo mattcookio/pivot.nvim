@@ -3,24 +3,17 @@ local M = {}
 -- Default configuration
 M.defaults = {
   -- Core behavior options
-  auto_record_history = true,
   smart_splits = true,
   smart_close = true,
   prevent_duplicates = true,
 
   -- User-configurable keymaps - set to false to disable a keymap
   keymaps = {
-    -- Split operations (Layout-Aware/Smart: merge or split within layout)
-    split_smart_right = '<leader>sL',
-    split_smart_left = '<leader>sH',
-    split_smart_down = '<leader>sJ',
-    split_smart_up = '<leader>sK',
-
-    -- Split operations (Full-Span: always split, ignoring layout)
-    split_full_right = '<leader>sl',
-    split_full_left = '<leader>sh',
-    split_full_down = '<leader>sj',
-    split_full_up = '<leader>sk',
+    -- Split: Uses standard Vim geometry. Merges if smart_splits = true and neighbor exists.
+    split_right = '<leader>sl',
+    split_left = '<leader>sh',
+    split_down = '<leader>sj',
+    split_up = '<leader>sk',
 
     -- Split management
     close_split = '<leader>sd',
@@ -69,10 +62,11 @@ function M.validate(user_config)
   user_config = user_config or {}
 
   -- Basic validation of configuration values
-  if user_config.history_limit then
-    vim.notify("pivot.nvim: history_limit is no longer supported - history is now unlimited", vim.log.levels.WARN)
-    user_config.history_limit = nil
-  end
+  -- REMOVED history_limit validation
+  -- if user_config.history_limit then
+  --   vim.notify("pivot.nvim: history_limit is no longer supported - history is now unlimited", vim.log.levels.WARN)
+  --   user_config.history_limit = nil
+  -- end
 
   -- Validate keymaps configuration
   if user_config.keymaps and type(user_config.keymaps) ~= "table" then

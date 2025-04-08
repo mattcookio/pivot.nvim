@@ -57,31 +57,19 @@ function M.check()
     health.ok("Configuration loaded successfully")
 
     -- Check specific configuration settings
-    if config_module.options.auto_record_history then
-      health.ok("Buffer history tracking is enabled")
-    else
-      health.warn("Buffer history tracking is disabled (some features may not work as expected)")
-    end
-
     if config_module.options.smart_splits then
-      health.ok("Smart split creation is enabled")
+      health.ok("Smart split/merge functionality is enabled")
     else
-      health.info("Smart split creation is disabled (using direct splits instead)")
+      health.info("Smart split/merge functionality is disabled (splits will never merge)")
     end
 
     -- Check for conflicting settings
     health.info("Checking for conflicting settings...")
 
-    -- Check auto_record_history and smart_close
-    if not config_module.options.auto_record_history and config_module.options.smart_close then
-      health.warn("Potentially ineffective settings: auto_record_history is disabled but smart_close is enabled")
-      health.info("Smart buffer closing works best with history tracking enabled")
-    end
-
     -- Check smart_splits and prevent_duplicates
     if config_module.options.smart_splits and not config_module.options.prevent_duplicates then
-      health.info("Note: smart_splits is enabled but prevent_duplicates is disabled")
-      health.info("This may lead to duplicate buffers across splits in some cases")
+      health.warn("Potentially confusing settings: smart_splits is enabled but prevent_duplicates is disabled")
+      health.info("Merging might create duplicate buffer views unexpectedly.")
     end
 
     -- Check for incomplete keymap pairs
