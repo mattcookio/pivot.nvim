@@ -164,6 +164,9 @@ function M.setup_keymaps(config)
   set_keymap(keymaps.close_buffer, function() buffers.close_buffer(config) end, "Close buffer (smart)")
   set_keymap(keymaps.close_other_buffers, function() buffers.close_other_buffers(config) end, "Close other buffers")
   set_keymap(keymaps.close_all_buffers, function() buffers.close_all_buffers(config) end, "Close all buffers")
+
+  -- Terminal navigation
+  set_keymap(keymaps.exit_terminal_mode, "<C-\\><C-n>", "Exit terminal mode", { 't' })
 end
 
 return M

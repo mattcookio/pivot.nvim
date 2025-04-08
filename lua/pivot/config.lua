@@ -39,6 +39,9 @@ M.defaults = {
     nav_right = '<C-D-l>', -- Navigate to the split on the right
     nav_down = '<C-D-j>',  -- Navigate to the split below
     nav_up = '<C-D-k>',    -- Navigate to the split above
+
+    -- Terminal navigation
+    exit_terminal_mode = '<Esc>', -- Exit terminal mode
   },
 
   -- Command options

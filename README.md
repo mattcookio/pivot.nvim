@@ -123,6 +123,9 @@ require('pivot').setup({
     nav_right = '<C-D-l>',
     nav_down = '<C-D-j>',
     nav_up = '<C-D-k>',
+
+    -- Terminal navigation
+    exit_terminal_mode = '<Esc>',
   },
 
   -- Command options
