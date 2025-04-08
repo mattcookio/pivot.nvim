@@ -20,6 +20,9 @@ M.defaults = {
     close_other_splits = '<leader>so',
     close_all_splits = '<leader>sa',
 
+    -- Terminal
+    terminal = '<leader>tt', -- Open terminal in current window
+
     -- Buffer operations
     close_buffer = '<leader>bd',
     close_other_buffers = '<leader>bo',

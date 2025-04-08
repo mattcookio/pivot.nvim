@@ -10,11 +10,22 @@ function M.close_buffer(opts)
 
     -- Handle terminal buffers differently
     if vim.bo[current_buf].buftype == 'terminal' then
-        vim.cmd('q')
-        return
+        -- vim.cmd('q') -- Don't quit window
+        local fallback_buf = utils.get_fallback_buffer(current_win, current_buf)
+        -- Ensure fallback is not the terminal buffer itself or invalid
+        if fallback_buf and vim.api.nvim_buf_is_valid(fallback_buf) and fallback_buf ~= current_buf then
+            vim.api.nvim_win_set_buf(current_win, fallback_buf)
+            -- Attempt to delete the original terminal buffer (use force = true)
+            pcall(vim.api.nvim_buf_delete, current_buf, { force = true })
+        else
+            -- If no suitable fallback, just delete terminal buffer and leave window empty
+            pcall(vim.api.nvim_buf_delete, current_buf, { force = true })
+            vim.cmd('enew') -- Open an empty buffer
+        end
+        return              -- Stop processing for terminals here
     end
 
-    -- Find a fallback buffer for this window
+    -- Find a fallback buffer for this window (for non-terminal buffers)
     local fallback_buf = utils.get_fallback_buffer(current_win, current_buf)
 
     -- Check if this is the last window

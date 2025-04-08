@@ -15,6 +15,7 @@
   | Action | Keys | Description |
   |------------------------------|-------------------------|--------------------------------------------------|
   | **Splits** | `<leader>sl/sh/sj/sk` | Split (standard geometry) or merge (visual prompt)|
+  | **Terminal** | `<leader>st` | Open terminal in current window |
   | **Split Management** | `<leader>sd/so/sa` | Close split / close others / close all |
   | **Buffers** | `<leader>bd/bo/ba` | Close buffer / close others / close all |
   | | `<C-h>/<C-l>` or `<C-k>/<C-j>` | Navigate prev/next buffer |
@@ -96,6 +97,9 @@ require('pivot').setup({
     close_split = '<leader>sd',
     close_other_splits = '<leader>so',
     close_all_splits = '<leader>sa',
+
+    -- Terminal
+    terminal = '<leader>st', -- Open terminal in current window
 
     -- Buffer operations
     close_buffer = '<leader>bd',
@@ -193,6 +197,7 @@ After every split creation command, pivot.nvim attempts to equalize all window s
 **Keymaps:**
 
 - `<leader>sl/sh/sj/sk`: Split (standard geometry) or Merge (visual prompt if ambiguous)
+- `<leader>st`: Open terminal in current window
 - `<leader>sd`: Close current split
 - `<leader>so`: Close all other splits
 - `<leader>sa`: Close all splits (keep one)
