@@ -20,10 +20,19 @@ M.defaults = {
     close_other_splits = '<leader>so',
     close_all_splits = '<leader>sa',
 
+    -- Terminal
+    terminal = '<leader>tt', -- Open terminal in current window
+
     -- Buffer operations
     close_buffer = '<leader>bd',
     close_other_buffers = '<leader>bo',
     close_all_buffers = '<leader>ba',
+
+    -- Move buffer to different split
+    move_to_right = '<leader>bl',
+    move_to_left = '<leader>bh',
+    move_to_down = '<leader>bj',
+    move_to_up = '<leader>bk',
 
     -- Buffer navigation (skips buffers visible in other windows)
     prev_buffer = '<C-h>',
@@ -36,6 +45,9 @@ M.defaults = {
     nav_right = '<C-D-l>', -- Navigate to the split on the right
     nav_down = '<C-D-j>',  -- Navigate to the split below
     nav_up = '<C-D-k>',    -- Navigate to the split above
+
+    -- Terminal navigation
+    exit_terminal_mode = '<Esc>', -- Exit terminal mode
   },
 
   -- Command options

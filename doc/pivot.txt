@@ -72,7 +72,21 @@ With custom configuration:
       keymaps = {
         -- Split operations
         split_right = '<leader>sl',
-        -- ... other keymaps
+        split_left = '<leader>sh',
+        split_down = '<leader>sj',
+        split_up = '<leader>sk',
+
+        -- Split management
+        close_split = '<leader>sd',
+        close_other_splits = '<leader>so',
+        close_all_splits = '<leader>sa',
+
+        -- Terminal
+        terminal = '<leader>st',
+
+        -- Buffer operations
+        close_buffer = '<leader>bd',
+        -- ... other keymaps ...
       }
     })
 <
@@ -151,6 +165,10 @@ to customize:
       { desc = 'Close other buffers' })
     vim.keymap.set('n', '<leader>ba', function() require('pivot').close_all_buffers() end, 
       { desc = 'Close all buffers' })
+
+    -- Terminal
+    vim.keymap.set('n', '<leader>st', function() vim.cmd('terminal') end,
+      { desc = 'Open terminal in current window' })
 
     -- Buffer navigation
     vim.keymap.set('n', '<C-h>', function() require('pivot').navigate_all_buffers('prev') end, 

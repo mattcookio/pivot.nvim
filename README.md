@@ -15,10 +15,12 @@
   | Action | Keys | Description |
   |------------------------------|-------------------------|--------------------------------------------------|
   | **Splits** | `<leader>sl/sh/sj/sk` | Split (standard geometry) or merge (visual prompt)|
+  | **Terminal** | `<leader>tt` | Open terminal in current window |
   | **Split Management** | `<leader>sd/so/sa` | Close split / close others / close all |
   | **Buffers** | `<leader>bd/bo/ba` | Close buffer / close others / close all |
   | | `<C-h>/<C-l>` or `<C-k>/<C-j>` | Navigate prev/next buffer |
   | **Navigation** | `<C-D-h>/<C-D-l>/<C-D-j>/<C-D-k>` | Navigate between splits |
+  | **Move Buffer** | `<leader>bl/bh/bj/bk` | Move current buffer to adjacent split |
 - **Get started:** `require('pivot').setup()`
 
 ## ✨ What is pivot.nvim?
@@ -97,12 +99,15 @@ require('pivot').setup({
     close_other_splits = '<leader>so',
     close_all_splits = '<leader>sa',
 
+    -- Terminal
+    terminal = '<leader>tt', -- Open terminal in current window
+
     -- Buffer operations
     close_buffer = '<leader>bd',
     close_other_buffers = '<leader>bo',
     close_all_buffers = '<leader>ba',
 
-    -- Move buffer to different split
+    -- Move buffer to different split (Example: Not enabled by default)
     move_to_right = '<leader>bl',
     move_to_left = '<leader>bh',
     move_to_down = '<leader>bj',
@@ -119,6 +124,9 @@ require('pivot').setup({
     nav_right = '<C-D-l>',
     nav_down = '<C-D-j>',
     nav_up = '<C-D-k>',
+
+    -- Terminal navigation
+    exit_terminal_mode = '<Esc>',
   },
 
   -- Command options
@@ -192,17 +200,22 @@ After every split creation command, pivot.nvim attempts to equalize all window s
 
 **Keymaps:**
 
-- `<leader>sl/sh/sj/sk`: Split (standard geometry) or Merge (visual prompt if ambiguous)
-- `<leader>sd`: Close current split
-- `<leader>so`: Close all other splits
-- `<leader>sa`: Close all splits (keep one)
-- `<leader>bd`: Close buffer (smart)
-- `<leader>bo`: Close other buffers
-- `<leader>ba`: Close all buffers
-- `<C-h>` / `<C-l>` or `<C-k>` / `<C-j>`: Navigate prev/next buffer
-- `<C-D-h>/<C-D-l>/<C-D-j>/<C-D-k>`: Navigate between splits
+| Action                   | Keys                                   | Description                                                     |
+| ------------------------ | -------------------------------------- | --------------------------------------------------------------- |
+| Split Right/Left/Down/Up | `<leader>sl/sh/sj/sk`                  | Split (standard geometry) or Merge (visual prompt if ambiguous) |
+| Open Terminal            | `<leader>tt`                           | Open terminal in current window                                 |
+| Close Split              | `<leader>sd`                           | Close current split                                             |
+| Close Other Splits       | `<leader>so`                           | Close all other splits                                          |
+| Close All Splits         | `<leader>sa`                           | Close all splits (keep one)                                     |
+| Close Buffer             | `<leader>bd`                           | Close buffer (smart)                                            |
+| Close Other Buffers      | `<leader>bo`                           | Close other buffers                                             |
+| Close All Buffers        | `<leader>ba`                           | Close all buffers                                               |
+| Navigate Prev/Next Buf   | `<C-h>` / `<C-l>` or `<C-k>` / `<C-j>` | Navigate prev/next buffer (skips visible in other wins)         |
+| Navigate Splits          | `<C-D-h>/<C-D-l>/<C-D-j>/<C-D-k>`      | Navigate between splits (Normal & Terminal modes)               |
+| Exit Terminal Mode       | `<Esc>` (in term mode)                 | Exit terminal mode                                              |
+| Move Buffer R/L/D/U      | `<leader>bl/bh/bj/bk`                  | Move buffer to adjacent split (prompts visually if ambiguous)   |
 
-### 📄 Buffer Management
+### 🪟 Buffer Management
 
 Manage buffers like a pro:
 
@@ -218,16 +231,19 @@ Manage buffers like a pro:
 <summary>Show all available Vim commands (default prefix: Pivot)</summary>
 
 ```
-:PivotSplitRight/Left                 - Split vertically (:vnew) or merge (prompts visually if ambiguous)
-:PivotSplitDown/Up                    - Split horizontally (:new) or merge (prompts visually if ambiguous)
+:PivotSplitRight                     - Split right (standard :vnew) or merge
+:PivotSplitLeft                      - Split left (standard :vnew) or merge
+:PivotSplitUp                        - Split up (standard :new) or merge
+:PivotSplitDown                      - Split down (standard :new) or merge
 :PivotCloseSplit                      - Close current split
-:PivotCloseOtherSplits                - Close all splits except current
-:PivotCloseAllSplits                  - Close all splits
-:PivotCloseBuffer                     - Close buffer smartly
+:PivotCloseOtherSplits                - Close all splits except current one
+:PivotCloseAllSplits                  - Close all splits, keeping only one with empty buffer
+:PivotCloseBuffer                     - Smart buffer closing with window management (preserves layout, avoids duplicates)
 :PivotCloseOthers                     - Close all other buffers
 :PivotCloseAll                        - Close all buffers
-:PivotNavigate {dir}                  - Navigate buffers (next/prev)
-:PivotNavigateSplit {dir}             - Navigate to split in direction
+:PivotNavigate {next/prev}            - Navigate buffers (next/prev) that are not in other windows
+:PivotNavigateSplit {direction}       - Navigate to split in specified direction (left/right/up/down or h/j/k/l)
+:PivotMoveBuffer {direction}         - Move current buffer to adjacent split (left/right/up/down or h/j/k/l)
 ```
 
 </details>
