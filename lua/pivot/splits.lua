@@ -464,42 +464,15 @@ function M.swap_buffer_with_split(direction, opts)
     end
 end
 
--- Check if the current window is at the bottom or right edge.
--- Only considers normal (non-floating) windows.
-local function at_bottom_edge()
+-- Edge detection via wincmd: try to move in a direction, check if we
+-- actually moved, then move back. This uses Neovim's own navigation
+-- so it naturally ignores floating windows and handles all edge cases.
+local function at_edge(dir)
     local cur = vim.api.nvim_get_current_win()
-    local cur_pos = vim.api.nvim_win_get_position(cur)
-    local cur_h = vim.api.nvim_win_get_height(cur)
-    local cur_bottom = cur_pos[1] + cur_h
-
-    for _, win in ipairs(vim.api.nvim_list_wins()) do
-        if win ~= cur then
-            local cfg = vim.api.nvim_win_get_config(win)
-            if cfg.relative == '' then -- skip floating windows
-                local pos = vim.api.nvim_win_get_position(win)
-                if pos[1] >= cur_bottom then return false end
-            end
-        end
-    end
-    return true
-end
-
-local function at_right_edge()
-    local cur = vim.api.nvim_get_current_win()
-    local cur_pos = vim.api.nvim_win_get_position(cur)
-    local cur_w = vim.api.nvim_win_get_width(cur)
-    local cur_right = cur_pos[2] + cur_w
-
-    for _, win in ipairs(vim.api.nvim_list_wins()) do
-        if win ~= cur then
-            local cfg = vim.api.nvim_win_get_config(win)
-            if cfg.relative == '' then -- skip floating windows
-                local pos = vim.api.nvim_win_get_position(win)
-                if pos[2] >= cur_right then return false end
-            end
-        end
-    end
-    return true
+    vim.cmd('wincmd ' .. dir)
+    local moved = vim.api.nvim_get_current_win() ~= cur
+    if moved then vim.api.nvim_set_current_win(cur) end
+    return not moved
 end
 
 -- Smart resize: j/l naturally grow, k/h naturally shrink.
@@ -509,14 +482,14 @@ function M.resize(direction, opts)
     local step = opts.resize_step or 3
 
     if direction == 'j' or direction == 'k' then
-        local flip = at_bottom_edge()
+        local flip = at_edge('j')
         if direction == 'j' then
             vim.cmd('resize ' .. (flip and '-' or '+') .. step)
         else
             vim.cmd('resize ' .. (flip and '+' or '-') .. step)
         end
     elseif direction == 'h' or direction == 'l' then
-        local flip = at_right_edge()
+        local flip = at_edge('l')
         if direction == 'l' then
             vim.cmd('vertical resize ' .. (flip and '-' or '+') .. step)
         else
