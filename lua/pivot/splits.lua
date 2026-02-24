@@ -464,26 +464,8 @@ function M.swap_buffer_with_split(direction, opts)
     end
 end
 
--- Find the window's layout context: parent type and whether it's the last child.
--- Returns { type = 'row'|'col', is_last = bool } or nil if single window.
--- 'col' = stacked vertically (j/k resize), 'row' = side by side (h/l resize).
--- is_last: true for bottom-most (col) or right-most (row) window.
-local function find_layout_info(layout, target_win)
-    if layout[1] == 'leaf' then
-        return layout[2] == target_win and 'found' or nil
-    end
-    for i = 2, #layout do
-        local result = find_layout_info(layout[i], target_win)
-        if result == 'found' then
-            return { type = layout[1], is_last = (i == #layout) }
-        end
-        if result then return result end
-    end
-    return nil
-end
-
 -- Smart resize: direction means "push the border that way."
--- Uses winlayout() tree to determine position — no winnr() side effects.
+-- Uses window screen positions to detect neighbors — avoids winlayout() ordering issues.
 --
 -- Top split:    j = grow (push border down),  k = shrink
 -- Bottom split: k = grow (push border up),    j = shrink
@@ -491,17 +473,60 @@ end
 -- Right split:  h = grow (push border left),  l = shrink
 function M.resize(direction, opts)
     local step = opts.resize_step or 3
-    local info = find_layout_info(vim.fn.winlayout(), vim.api.nvim_get_current_win())
-    if not info then return end
+    local win = vim.api.nvim_get_current_win()
+    local pos = vim.api.nvim_win_get_position(win)
+    local w = vim.api.nvim_win_get_width(win)
+    local h = vim.api.nvim_win_get_height(win)
+
+    -- Collect non-floating windows
+    local wins = {}
+    for _, wid in ipairs(vim.api.nvim_list_wins()) do
+        local ok, cfg = pcall(vim.api.nvim_win_get_config, wid)
+        if ok and (not cfg.relative or cfg.relative == '') then
+            table.insert(wins, wid)
+        end
+    end
 
     if direction == 'j' or direction == 'k' then
-        if info.type ~= 'col' then return end
-        local sign = (direction == 'j') == info.is_last and '-' or '+'
-        vim.cmd('resize ' .. sign .. step)
+        local has_above, has_below = false, false
+        for _, other in ipairs(wins) do
+            if other ~= win then
+                local opos = vim.api.nvim_win_get_position(other)
+                local ow = vim.api.nvim_win_get_width(other)
+                -- Check horizontal overlap (same column group)
+                local overlap = math.min(pos[2] + w, opos[2] + ow) - math.max(pos[2], opos[2])
+                if overlap > 0 then
+                    if opos[1] < pos[1] then has_above = true end
+                    if opos[1] > pos[1] then has_below = true end
+                end
+            end
+        end
+        if not has_above and not has_below then return end
+        if direction == 'j' then
+            vim.cmd('resize ' .. (has_below and '+' or '-') .. step)
+        else
+            vim.cmd('resize ' .. (has_above and '+' or '-') .. step)
+        end
     elseif direction == 'h' or direction == 'l' then
-        if info.type ~= 'row' then return end
-        local sign = (direction == 'l') == info.is_last and '-' or '+'
-        vim.cmd('vertical resize ' .. sign .. step)
+        local has_left, has_right = false, false
+        for _, other in ipairs(wins) do
+            if other ~= win then
+                local opos = vim.api.nvim_win_get_position(other)
+                local oh = vim.api.nvim_win_get_height(other)
+                -- Check vertical overlap (same row group)
+                local overlap = math.min(pos[1] + h, opos[1] + oh) - math.max(pos[1], opos[1])
+                if overlap > 0 then
+                    if opos[2] < pos[2] then has_left = true end
+                    if opos[2] > pos[2] then has_right = true end
+                end
+            end
+        end
+        if not has_left and not has_right then return end
+        if direction == 'l' then
+            vim.cmd('vertical resize ' .. (has_right and '+' or '-') .. step)
+        else
+            vim.cmd('vertical resize ' .. (has_left and '+' or '-') .. step)
+        end
     end
 end
 
