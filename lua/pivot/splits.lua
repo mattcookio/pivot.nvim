@@ -464,29 +464,42 @@ function M.swap_buffer_with_split(direction, opts)
     end
 end
 
--- Edge detection via winnr(): no side effects, no window switching.
--- winnr('1j') returns the window number you'd reach with wincmd j.
--- If it equals the current window number, there's no window in that direction.
+-- Find the immediate parent layout type ('row' or 'col') for a given window.
+-- 'col' = children stacked vertically (horizontal dividers → j/k can resize)
+-- 'row' = children side by side (vertical dividers → h/l can resize)
+local function find_parent_layout(layout, target_win)
+    if layout[1] == 'leaf' then
+        return layout[2] == target_win and 'found' or nil
+    end
+    for i = 2, #layout do
+        local result = find_parent_layout(layout[i], target_win)
+        if result == 'found' then return layout[1] end
+        if result then return result end
+    end
+    return nil
+end
+
+-- Edge detection via winnr() for h/l (no side effects).
 local function at_edge(dir)
     return vim.fn.winnr() == vim.fn.winnr('1' .. dir)
 end
 
--- Smart resize: j/l naturally grow, k/h naturally shrink.
--- At the bottom/right edge, the mapping flips so opposite keys
--- always do opposite things regardless of window position.
+-- Resize: j = taller, k = shorter (always). h/l use edge detection
+-- to flip at the right edge so the border pushes in the key direction.
+-- No-op when the current window can't resize on the requested axis.
 function M.resize(direction, opts)
     local step = opts.resize_step or 3
+    local parent = find_parent_layout(vim.fn.winlayout(), vim.api.nvim_get_current_win())
 
     if direction == 'j' or direction == 'k' then
-        if at_edge('j') and at_edge('k') then return end -- no horizontal splits
-        local flip = at_edge('j')
+        if parent ~= 'col' then return end -- no horizontal splits for this window
         if direction == 'j' then
-            vim.cmd('resize ' .. (flip and '-' or '+') .. step)
+            vim.cmd('resize +' .. step)
         else
-            vim.cmd('resize ' .. (flip and '+' or '-') .. step)
+            vim.cmd('resize -' .. step)
         end
     elseif direction == 'h' or direction == 'l' then
-        if at_edge('h') and at_edge('l') then return end -- no vertical splits
+        if parent ~= 'row' then return end -- no vertical splits for this window
         local flip = at_edge('l')
         if direction == 'l' then
             vim.cmd('vertical resize ' .. (flip and '-' or '+') .. step)
