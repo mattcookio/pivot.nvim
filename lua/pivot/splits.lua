@@ -482,6 +482,7 @@ function M.resize(direction, opts)
     local step = opts.resize_step or 3
 
     if direction == 'j' or direction == 'k' then
+        if at_edge('j') and at_edge('k') then return end -- no horizontal splits
         local flip = at_edge('j')
         if direction == 'j' then
             vim.cmd('resize ' .. (flip and '-' or '+') .. step)
@@ -489,6 +490,7 @@ function M.resize(direction, opts)
             vim.cmd('resize ' .. (flip and '+' or '-') .. step)
         end
     elseif direction == 'h' or direction == 'l' then
+        if at_edge('h') and at_edge('l') then return end -- no vertical splits
         local flip = at_edge('l')
         if direction == 'l' then
             vim.cmd('vertical resize ' .. (flip and '-' or '+') .. step)
