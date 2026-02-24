@@ -99,6 +99,20 @@ function M.register_commands(config)
       end,
       desc = "Move current buffer to adjacent split (left/right/up/down or h/j/k/l)",
       nargs = 1
+    },
+    [prefix .. "SwapBuffer"] = {
+      function(opts)
+        local direction_map = { left = 'h', right = 'l', up = 'k', down = 'j' }
+        local direction = opts.args:lower()
+        local mapped_dir = direction_map[direction] or direction
+        if not table.concat({ 'h', 'j', 'k', 'l' }):find(mapped_dir, 1, true) then
+          vim.notify("Invalid direction: " .. opts.args .. ". Use left/right/up/down or h/j/k/l.", vim.log.levels.ERROR)
+          return
+        end
+        splits.swap_buffer_with_split(mapped_dir, config)
+      end,
+      desc = "Swap current buffer with adjacent split, cursor stays (left/right/up/down or h/j/k/l)",
+      nargs = 1
     }
   }
 
@@ -184,6 +198,12 @@ function M.setup_keymaps(config)
   set_keymap(keymaps.move_to_left, function() splits.move_buffer_to_split('h', config) end, "Move buffer to left split")
   set_keymap(keymaps.move_to_down, function() splits.move_buffer_to_split('j', config) end, "Move buffer to down split")
   set_keymap(keymaps.move_to_up, function() splits.move_buffer_to_split('k', config) end, "Move buffer to up split")
+
+  -- Swap buffer with adjacent split, cursor stays (Normal mode only)
+  set_keymap(keymaps.swap_right, function() splits.swap_buffer_with_split('l', config) end, "Swap buffer with right split")
+  set_keymap(keymaps.swap_left, function() splits.swap_buffer_with_split('h', config) end, "Swap buffer with left split")
+  set_keymap(keymaps.swap_down, function() splits.swap_buffer_with_split('j', config) end, "Swap buffer with split below")
+  set_keymap(keymaps.swap_up, function() splits.swap_buffer_with_split('k', config) end, "Swap buffer with split above")
 
   -- Terminal navigation
   set_keymap(keymaps.exit_terminal_mode, "<C-\\><C-n>", "Exit terminal mode", { 't' })

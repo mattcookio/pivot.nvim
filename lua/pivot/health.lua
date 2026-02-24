@@ -90,6 +90,20 @@ function M.check()
         table.insert(missing_pairs, "split_up")
       end
 
+      -- Check swap pairs (horizontal)
+      if config_module.options.keymaps.swap_right and not config_module.options.keymaps.swap_left then
+        table.insert(missing_pairs, "swap_left")
+      elseif config_module.options.keymaps.swap_left and not config_module.options.keymaps.swap_right then
+        table.insert(missing_pairs, "swap_right")
+      end
+
+      -- Check swap pairs (vertical)
+      if config_module.options.keymaps.swap_up and not config_module.options.keymaps.swap_down then
+        table.insert(missing_pairs, "swap_down")
+      elseif config_module.options.keymaps.swap_down and not config_module.options.keymaps.swap_up then
+        table.insert(missing_pairs, "swap_up")
+      end
+
       -- Check buffer navigation pairs
       if config_module.options.keymaps.prev_buffer and not config_module.options.keymaps.next_buffer then
         table.insert(missing_pairs, "next_buffer")
@@ -139,6 +153,11 @@ function M.check()
   check_command_pairs(
     { "move_to_right", "move_to_left", "move_to_up", "move_to_down" },
     "Buffer movement"
+  )
+
+  check_command_pairs(
+    { "swap_right", "swap_left", "swap_up", "swap_down" },
+    "Buffer swap"
   )
 
   check_command_pairs(

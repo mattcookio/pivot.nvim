@@ -28,11 +28,17 @@ M.defaults = {
     close_other_buffers = '<leader>bo',
     close_all_buffers = '<leader>ba',
 
-    -- Move buffer to different split
+    -- Move buffer to different split (cursor follows)
     move_to_right = '<leader>bl',
     move_to_left = '<leader>bh',
     move_to_down = '<leader>bj',
     move_to_up = '<leader>bk',
+
+    -- Swap buffer with adjacent split (cursor stays)
+    swap_right = '<leader>sxl',
+    swap_left = '<leader>sxh',
+    swap_down = '<leader>sxj',
+    swap_up = '<leader>sxk',
 
     -- Buffer navigation (skips buffers visible in other windows)
     prev_buffer = '<C-h>',
