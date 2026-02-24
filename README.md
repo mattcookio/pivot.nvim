@@ -20,7 +20,8 @@
   | **Buffers** | `<leader>bd/bo/ba` | Close buffer / close others / close all |
   | | `<C-h>/<C-l>` or `<C-k>/<C-j>` | Navigate prev/next buffer |
   | **Navigation** | `<C-D-h>/<C-D-l>/<C-D-j>/<C-D-k>` | Navigate between splits |
-  | **Move Buffer** | `<leader>bl/bh/bj/bk` | Move current buffer to adjacent split |
+  | **Move Buffer** | `<leader>bl/bh/bj/bk` | Move current buffer to adjacent split (cursor follows) |
+  | **Swap Buffer** | `<leader>sxl/sxh/sxj/sxk` | Swap buffer with adjacent split (cursor stays) |
 - **Get started:** `require('pivot').setup()`
 
 ## ✨ What is pivot.nvim?
@@ -107,11 +108,17 @@ require('pivot').setup({
     close_other_buffers = '<leader>bo',
     close_all_buffers = '<leader>ba',
 
-    -- Move buffer to different split (Example: Not enabled by default)
+    -- Move buffer to different split (cursor follows)
     move_to_right = '<leader>bl',
     move_to_left = '<leader>bh',
     move_to_down = '<leader>bj',
     move_to_up = '<leader>bk',
+
+    -- Swap buffer with adjacent split (cursor stays)
+    swap_right = '<leader>sxl',
+    swap_left = '<leader>sxh',
+    swap_down = '<leader>sxj',
+    swap_up = '<leader>sxk',
 
     -- Buffer navigation (skips buffers visible in other windows)
     prev_buffer = '<C-h>',
@@ -213,7 +220,8 @@ After every split creation command, pivot.nvim attempts to equalize all window s
 | Navigate Prev/Next Buf   | `<C-h>` / `<C-l>` or `<C-k>` / `<C-j>` | Navigate prev/next buffer (skips visible in other wins)         |
 | Navigate Splits          | `<C-D-h>/<C-D-l>/<C-D-j>/<C-D-k>`      | Navigate between splits (Normal & Terminal modes)               |
 | Exit Terminal Mode       | `<Esc>` (in term mode)                 | Exit terminal mode                                              |
-| Move Buffer R/L/D/U      | `<leader>bl/bh/bj/bk`                  | Move buffer to adjacent split (prompts visually if ambiguous)   |
+| Move Buffer R/L/D/U      | `<leader>bl/bh/bj/bk`                  | Move buffer to adjacent split, cursor follows (visual prompt if ambiguous) |
+| Swap Buffer R/L/D/U      | `<leader>sxl/sxh/sxj/sxk`              | Swap buffer with adjacent split, cursor stays (visual prompt if ambiguous) |
 
 ### 🪟 Buffer Management
 
@@ -244,6 +252,7 @@ Manage buffers like a pro:
 :PivotNavigate {next/prev}            - Navigate buffers (next/prev) that are not in other windows
 :PivotNavigateSplit {direction}       - Navigate to split in specified direction (left/right/up/down or h/j/k/l)
 :PivotMoveBuffer {direction}         - Move current buffer to adjacent split (left/right/up/down or h/j/k/l)
+:PivotSwapBuffer {direction}         - Swap buffer with adjacent split, cursor stays (left/right/up/down or h/j/k/l)
 ```
 
 </details>
@@ -257,8 +266,9 @@ Manage buffers like a pro:
 local pivot = require('pivot')
 
 -- Examples
-pivot.move_buffer_to_split('h') -- Move buffer to left split
-pivot.close_buffer()            -- Close buffer intelligently
+pivot.move_buffer_to_split('h')  -- Move buffer to left split (cursor follows)
+pivot.swap_buffer_with_split('l') -- Swap buffer with right split (cursor stays)
+pivot.close_buffer()              -- Close buffer intelligently
 ```
 
 </details>
