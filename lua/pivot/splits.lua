@@ -464,15 +464,11 @@ function M.swap_buffer_with_split(direction, opts)
     end
 end
 
--- Edge detection via wincmd: try to move in a direction, check if we
--- actually moved, then move back. This uses Neovim's own navigation
--- so it naturally ignores floating windows and handles all edge cases.
+-- Edge detection via winnr(): no side effects, no window switching.
+-- winnr('1j') returns the window number you'd reach with wincmd j.
+-- If it equals the current window number, there's no window in that direction.
 local function at_edge(dir)
-    local cur = vim.api.nvim_get_current_win()
-    vim.cmd('wincmd ' .. dir)
-    local moved = vim.api.nvim_get_current_win() ~= cur
-    if moved then vim.api.nvim_set_current_win(cur) end
-    return not moved
+    return vim.fn.winnr() == vim.fn.winnr('1' .. dir)
 end
 
 -- Smart resize: j/l naturally grow, k/h naturally shrink.
