@@ -464,18 +464,64 @@ function M.swap_buffer_with_split(direction, opts)
     end
 end
 
--- Smart resize: direction means "push the border that way."
--- If there's a neighbor in the pressed direction, grow (push border out).
--- If at the edge (no neighbor), shrink (pull the opposite border in).
+-- Check if the current window is at the bottom or right edge.
+-- Only considers normal (non-floating) windows.
+local function at_bottom_edge()
+    local cur = vim.api.nvim_get_current_win()
+    local cur_pos = vim.api.nvim_win_get_position(cur)
+    local cur_h = vim.api.nvim_win_get_height(cur)
+    local cur_bottom = cur_pos[1] + cur_h
+
+    for _, win in ipairs(vim.api.nvim_list_wins()) do
+        if win ~= cur then
+            local cfg = vim.api.nvim_win_get_config(win)
+            if cfg.relative == '' then -- skip floating windows
+                local pos = vim.api.nvim_win_get_position(win)
+                if pos[1] >= cur_bottom then return false end
+            end
+        end
+    end
+    return true
+end
+
+local function at_right_edge()
+    local cur = vim.api.nvim_get_current_win()
+    local cur_pos = vim.api.nvim_win_get_position(cur)
+    local cur_w = vim.api.nvim_win_get_width(cur)
+    local cur_right = cur_pos[2] + cur_w
+
+    for _, win in ipairs(vim.api.nvim_list_wins()) do
+        if win ~= cur then
+            local cfg = vim.api.nvim_win_get_config(win)
+            if cfg.relative == '' then -- skip floating windows
+                local pos = vim.api.nvim_win_get_position(win)
+                if pos[2] >= cur_right then return false end
+            end
+        end
+    end
+    return true
+end
+
+-- Smart resize: j/l naturally grow, k/h naturally shrink.
+-- At the bottom/right edge, the mapping flips so opposite keys
+-- always do opposite things regardless of window position.
 function M.resize(direction, opts)
     local step = opts.resize_step or 3
-    local has_neighbor = #utils.get_neighboring_windows(direction) > 0
-    local sign = has_neighbor and '+' or '-'
 
-    if direction == 'k' or direction == 'j' then
-        vim.cmd('resize ' .. sign .. step)
+    if direction == 'j' or direction == 'k' then
+        local flip = at_bottom_edge()
+        if direction == 'j' then
+            vim.cmd('resize ' .. (flip and '-' or '+') .. step)
+        else
+            vim.cmd('resize ' .. (flip and '+' or '-') .. step)
+        end
     elseif direction == 'h' or direction == 'l' then
-        vim.cmd('vertical resize ' .. sign .. step)
+        local flip = at_right_edge()
+        if direction == 'l' then
+            vim.cmd('vertical resize ' .. (flip and '-' or '+') .. step)
+        else
+            vim.cmd('vertical resize ' .. (flip and '+' or '-') .. step)
+        end
     end
 end
 
