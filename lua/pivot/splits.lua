@@ -464,19 +464,18 @@ function M.swap_buffer_with_split(direction, opts)
     end
 end
 
--- Resize: k = taller, j = shorter, l = wider, h = narrower.
--- Neovim handles which border moves based on window position.
+-- Smart resize: direction means "push the border that way."
+-- If there's a neighbor in the pressed direction, grow (push border out).
+-- If at the edge (no neighbor), shrink (pull the opposite border in).
 function M.resize(direction, opts)
     local step = opts.resize_step or 3
+    local has_neighbor = #utils.get_neighboring_windows(direction) > 0
+    local sign = has_neighbor and '+' or '-'
 
-    if direction == 'k' then
-        vim.cmd('resize +' .. step)
-    elseif direction == 'j' then
-        vim.cmd('resize -' .. step)
-    elseif direction == 'l' then
-        vim.cmd('vertical resize +' .. step)
-    elseif direction == 'h' then
-        vim.cmd('vertical resize -' .. step)
+    if direction == 'k' or direction == 'j' then
+        vim.cmd('resize ' .. sign .. step)
+    elseif direction == 'h' or direction == 'l' then
+        vim.cmd('vertical resize ' .. sign .. step)
     end
 end
 
