@@ -464,48 +464,44 @@ function M.swap_buffer_with_split(direction, opts)
     end
 end
 
--- Find the immediate parent layout type ('row' or 'col') for a given window.
--- 'col' = children stacked vertically (horizontal dividers → j/k can resize)
--- 'row' = children side by side (vertical dividers → h/l can resize)
-local function find_parent_layout(layout, target_win)
+-- Find the window's layout context: parent type and whether it's the last child.
+-- Returns { type = 'row'|'col', is_last = bool } or nil if single window.
+-- 'col' = stacked vertically (j/k resize), 'row' = side by side (h/l resize).
+-- is_last: true for bottom-most (col) or right-most (row) window.
+local function find_layout_info(layout, target_win)
     if layout[1] == 'leaf' then
         return layout[2] == target_win and 'found' or nil
     end
     for i = 2, #layout do
-        local result = find_parent_layout(layout[i], target_win)
-        if result == 'found' then return layout[1] end
+        local result = find_layout_info(layout[i], target_win)
+        if result == 'found' then
+            return { type = layout[1], is_last = (i == #layout) }
+        end
         if result then return result end
     end
     return nil
 end
 
--- Edge detection via winnr() for h/l (no side effects).
-local function at_edge(dir)
-    return vim.fn.winnr() == vim.fn.winnr('1' .. dir)
-end
-
--- Resize: j = taller, k = shorter (always). h/l use edge detection
--- to flip at the right edge so the border pushes in the key direction.
--- No-op when the current window can't resize on the requested axis.
+-- Smart resize: direction means "push the border that way."
+-- Uses winlayout() tree to determine position — no winnr() side effects.
+--
+-- Top split:    j = grow (push border down),  k = shrink
+-- Bottom split: k = grow (push border up),    j = shrink
+-- Left split:   l = grow (push border right), h = shrink
+-- Right split:  h = grow (push border left),  l = shrink
 function M.resize(direction, opts)
     local step = opts.resize_step or 3
-    local parent = find_parent_layout(vim.fn.winlayout(), vim.api.nvim_get_current_win())
+    local info = find_layout_info(vim.fn.winlayout(), vim.api.nvim_get_current_win())
+    if not info then return end
 
     if direction == 'j' or direction == 'k' then
-        if parent ~= 'col' then return end -- no horizontal splits for this window
-        if direction == 'j' then
-            vim.cmd('resize +' .. step)
-        else
-            vim.cmd('resize -' .. step)
-        end
+        if info.type ~= 'col' then return end
+        local sign = (direction == 'j') == info.is_last and '-' or '+'
+        vim.cmd('resize ' .. sign .. step)
     elseif direction == 'h' or direction == 'l' then
-        if parent ~= 'row' then return end -- no vertical splits for this window
-        local flip = at_edge('l')
-        if direction == 'l' then
-            vim.cmd('vertical resize ' .. (flip and '-' or '+') .. step)
-        else
-            vim.cmd('vertical resize ' .. (flip and '+' or '-') .. step)
-        end
+        if info.type ~= 'row' then return end
+        local sign = (direction == 'l') == info.is_last and '-' or '+'
+        vim.cmd('vertical resize ' .. sign .. step)
     end
 end
 
