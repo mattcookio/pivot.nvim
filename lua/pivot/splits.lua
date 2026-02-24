@@ -333,135 +333,7 @@ function M.navigate_up(opts)
 end
 
 -- Helper function to swap buffers between two windows
-local function swap_buffers_between_windows(win1_id, win2_id, opts)
-    if not vim.api.nvim_win_is_valid(win1_id) or not vim.api.nvim_win_is_valid(win2_id) then
-        vim.notify("Cannot swap buffers: invalid window.", vim.log.levels.WARN)
-        return
-    end
-
-    local buf1 = vim.api.nvim_win_get_buf(win1_id)
-    local buf2 = vim.api.nvim_win_get_buf(win2_id)
-
-    if buf1 == buf2 then
-        vim.notify("Windows already contain the same buffer.", vim.log.levels.INFO)
-        return -- Nothing to do
-    end
-
-    -- Check if buffers are listed and modifiable (optional, could add config)
-    if vim.bo[buf1].buftype ~= "" or vim.bo[buf2].buftype ~= "" then
-        vim.notify("Cannot move buffer: involves a special buffer type.", vim.log.levels.WARN)
-        return
-    end
-
-    -- Perform the swap
-    local success1 = pcall(vim.api.nvim_win_set_buf, win1_id, buf2)
-    local success2 = pcall(vim.api.nvim_win_set_buf, win2_id, buf1)
-
-    if success1 and success2 then
-        -- Move cursor to the target window (where the original buffer now resides)
-        vim.api.nvim_set_current_win(win2_id)
-        vim.notify("Buffer moved successfully.", vim.log.levels.INFO)
-    else
-        vim.notify("Failed to swap buffers.", vim.log.levels.ERROR)
-        -- Attempt to revert if one failed? For simplicity, maybe not.
-    end
-end
-
--- Function to handle visual selection for MOVING a buffer
-local function prompt_visual_move_selection(neighbors, opts, move_callback)
-    local original_win = vim.api.nvim_get_current_win()
-    local choice_map = {} -- Map number key ('1', '2', ...) to neighbor win_id
-    local choice_num = 1
-
-    -- Define the cleanup function locally
-    local function cleanup()
-        utils.clear_dimming()
-        close_number_floats()
-        -- Ensure cursor returns to original window if move cancelled
-        if vim.api.nvim_get_current_win() ~= original_win and vim.api.nvim_win_is_valid(original_win) then
-            -- Check if the buffer move actually happened before switching back
-            local current_buf_after = vim.api.nvim_get_current_buf()
-            local original_buf_before = vim.fn.winbufnr(original_win)  -- Get original buffer
-            if current_buf_after == original_buf_before then           -- Check if buffer is still the same
-                pcall(vim.api.nvim_set_current_win, original_win)
-            end
-        end
-    end
-
-
-    local neighbor_map = {}
-    for _, nid in ipairs(neighbors) do neighbor_map[nid] = true end
-
-    -- Dim non-neighbor windows
-    for _, win_id in ipairs(vim.api.nvim_list_wins()) do
-        if win_id ~= original_win and not neighbor_map[win_id] then
-            utils.dim_window(win_id)
-        end
-    end
-
-    -- Create number overlays for neighbor windows
-    for _, win_id in ipairs(neighbors) do
-        if choice_num > 9 then break end
-        local num_char = tostring(choice_num)
-        local target_buf_id = vim.api.nvim_win_get_buf(win_id)
-        local target_pos = vim.api.nvim_win_get_position(win_id)
-        local target_width = vim.api.nvim_win_get_width(win_id)
-        local target_height = vim.api.nvim_win_get_height(win_id)
-
-        -- Create overlay content (repeat number character)
-        local target_lines = {}
-        for i = 1, target_height do
-            table.insert(target_lines, string.rep(num_char, target_width))
-        end
-
-        local float_buf = vim.api.nvim_create_buf(false, true)
-        vim.api.nvim_buf_set_lines(float_buf, 0, -1, false, target_lines)
-        local float_win_id = vim.api.nvim_open_win(float_buf, false, {
-            relative = 'editor',
-            row = target_pos[1],
-            col = target_pos[2],
-            width = target_width,
-            height = target_height,
-            style = 'minimal',
-            border = 'none',
-            zindex = 100,
-        })
-        vim.api.nvim_win_set_option(float_win_id, 'winhl', 'Normal:Visual') -- Use Visual highlight
-        vim.api.nvim_win_set_option(float_win_id, 'number', false)
-        vim.api.nvim_win_set_option(float_win_id, 'relativenumber', false)
-        vim.api.nvim_win_set_option(float_win_id, 'signcolumn', 'no')
-        vim.api.nvim_win_set_option(float_win_id, 'foldcolumn', '0')
-
-        table.insert(floating_windows, float_win_id)
-        choice_map[num_char] = win_id
-        choice_num = choice_num + 1
-    end
-
-    vim.notify("Move buffer to window number (1-" .. (choice_num - 1) .. ") or Esc to cancel", vim.log.levels.INFO)
-    vim.cmd('redraw')
-
-    local selected_win_id = nil
-    local char_code = vim.fn.getchar()
-    local char = (type(char_code) == 'number' and char_code ~= 0) and vim.fn.nr2char(char_code) or nil
-
-    if char and choice_map[char] then
-        selected_win_id = choice_map[char]
-        vim.notify("Moving buffer to window " .. selected_win_id, vim.log.levels.INFO)
-    else
-        vim.notify("Move cancelled.", vim.log.levels.INFO)
-    end
-
-    -- Perform cleanup *before* the move callback
-    cleanup()
-
-    -- Call the move callback if a selection was made
-    if selected_win_id then
-        move_callback(original_win, selected_win_id, opts)
-    end
-end
-
--- Helper function to swap buffers between two windows WITHOUT moving cursor
-local function swap_buffers_in_place(original_win, target_win, opts)
+local function swap_buffers(original_win, target_win, opts)
     if not vim.api.nvim_win_is_valid(original_win) or not vim.api.nvim_win_is_valid(target_win) then
         vim.notify("Cannot swap buffers: invalid window.", vim.log.levels.WARN)
         return
@@ -484,15 +356,19 @@ local function swap_buffers_in_place(original_win, target_win, opts)
     local success2 = pcall(vim.api.nvim_win_set_buf, target_win, buf1)
 
     if success1 and success2 then
-        -- Keep cursor in the original window
-        vim.api.nvim_set_current_win(original_win)
+        local follow = opts and opts.swap_follows_cursor
+        if follow then
+            vim.api.nvim_set_current_win(target_win)
+        else
+            vim.api.nvim_set_current_win(original_win)
+        end
         vim.notify("Buffers swapped.", vim.log.levels.INFO)
     else
         vim.notify("Failed to swap buffers.", vim.log.levels.ERROR)
     end
 end
 
--- Function to handle visual selection for SWAPPING a buffer (cursor stays in place)
+-- Function to handle visual selection for swapping a buffer
 local function prompt_visual_swap_selection(neighbors, opts, swap_callback)
     local original_win = vim.api.nvim_get_current_win()
     local choice_map = {}
@@ -574,7 +450,7 @@ local function prompt_visual_swap_selection(neighbors, opts, swap_callback)
     end
 end
 
--- Swap the buffer in the current window with an adjacent window (cursor stays in place)
+-- Swap the buffer in the current window with an adjacent window
 function M.swap_buffer_with_split(direction, opts)
     local current_win = vim.api.nvim_get_current_win()
     local neighbors = utils.get_neighboring_windows(direction)
@@ -582,26 +458,29 @@ function M.swap_buffer_with_split(direction, opts)
     if #neighbors == 0 then
         vim.notify("No adjacent window found in that direction.", vim.log.levels.WARN)
     elseif #neighbors == 1 then
-        swap_buffers_in_place(current_win, neighbors[1], opts)
+        swap_buffers(current_win, neighbors[1], opts)
     else
-        prompt_visual_swap_selection(neighbors, opts, swap_buffers_in_place)
+        prompt_visual_swap_selection(neighbors, opts, swap_buffers)
     end
 end
 
--- Move the buffer in the current window to an adjacent window
-function M.move_buffer_to_split(direction, opts)
-    local current_win = vim.api.nvim_get_current_win()
-    local neighbors = utils.get_neighboring_windows(direction)
-
-    if #neighbors == 0 then
-        vim.notify("No adjacent window found in that direction.", vim.log.levels.WARN)
-    elseif #neighbors == 1 then
-        -- Direct move if only one neighbor
-        swap_buffers_between_windows(current_win, neighbors[1], opts)
-    else
-        -- Prompt user if multiple neighbors
-        prompt_visual_move_selection(neighbors, opts, swap_buffers_between_windows)
+-- Resize the current split in a given direction
+function M.resize(direction, opts)
+    local step = opts.resize_step or 3
+    if direction == 'h' then
+        vim.cmd('vertical resize -' .. step)
+    elseif direction == 'l' then
+        vim.cmd('vertical resize +' .. step)
+    elseif direction == 'j' then
+        vim.cmd('resize -' .. step)
+    elseif direction == 'k' then
+        vim.cmd('resize +' .. step)
     end
+end
+
+-- Equalize all split sizes
+function M.resize_equal(opts)
+    vim.cmd('wincmd =')
 end
 
 return M

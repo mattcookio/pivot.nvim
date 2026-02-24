@@ -86,21 +86,7 @@ function M.register_commands(config)
       desc = "Navigate to split in specified direction (left/right/up/down or h/j/k/l)",
       nargs = 1
     },
-    [prefix .. "MoveBuffer"] = {
-      function(opts)
-        local direction_map = { left = 'h', right = 'l', up = 'k', down = 'j' }
-        local direction = opts.args:lower()
-        local mapped_dir = direction_map[direction] or direction -- Allow h/j/k/l directly
-        if not table.concat({ 'h', 'j', 'k', 'l' }):find(mapped_dir, 1, true) then
-          vim.notify("Invalid direction: " .. opts.args .. ". Use left/right/up/down or h/j/k/l.", vim.log.levels.ERROR)
-          return
-        end
-        splits.move_buffer_to_split(mapped_dir, config)
-      end,
-      desc = "Move current buffer to adjacent split (left/right/up/down or h/j/k/l)",
-      nargs = 1
-    },
-    [prefix .. "SwapBuffer"] = {
+    [prefix .. "Swap"] = {
       function(opts)
         local direction_map = { left = 'h', right = 'l', up = 'k', down = 'j' }
         local direction = opts.args:lower()
@@ -111,7 +97,7 @@ function M.register_commands(config)
         end
         splits.swap_buffer_with_split(mapped_dir, config)
       end,
-      desc = "Swap current buffer with adjacent split, cursor stays (left/right/up/down or h/j/k/l)",
+      desc = "Swap buffer with adjacent split (left/right/up/down or h/j/k/l)",
       nargs = 1
     }
   }
@@ -193,13 +179,7 @@ function M.setup_keymaps(config)
   set_keymap(keymaps.close_other_buffers, function() buffers.close_other_buffers(config) end, "Close other buffers")
   set_keymap(keymaps.close_all_buffers, function() buffers.close_all_buffers(config) end, "Close all buffers")
 
-  -- Move buffer to adjacent split (Normal mode only)
-  set_keymap(keymaps.move_to_right, function() splits.move_buffer_to_split('l', config) end, "Move buffer to right split")
-  set_keymap(keymaps.move_to_left, function() splits.move_buffer_to_split('h', config) end, "Move buffer to left split")
-  set_keymap(keymaps.move_to_down, function() splits.move_buffer_to_split('j', config) end, "Move buffer to down split")
-  set_keymap(keymaps.move_to_up, function() splits.move_buffer_to_split('k', config) end, "Move buffer to up split")
-
-  -- Swap buffer with adjacent split, cursor stays (Normal mode only)
+  -- Swap buffer with adjacent split (Normal mode only)
   set_keymap(keymaps.swap_right, function() splits.swap_buffer_with_split('l', config) end, "Swap buffer with right split")
   set_keymap(keymaps.swap_left, function() splits.swap_buffer_with_split('h', config) end, "Swap buffer with left split")
   set_keymap(keymaps.swap_down, function() splits.swap_buffer_with_split('j', config) end, "Swap buffer with split below")

@@ -151,11 +151,6 @@ function M.check()
   )
 
   check_command_pairs(
-    { "move_to_right", "move_to_left", "move_to_up", "move_to_down" },
-    "Buffer movement"
-  )
-
-  check_command_pairs(
     { "swap_right", "swap_left", "swap_up", "swap_down" },
     "Buffer swap"
   )

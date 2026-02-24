@@ -6,6 +6,7 @@ M.defaults = {
   smart_splits = true,
   smart_close = true,
   prevent_duplicates = true,
+  swap_follows_cursor = false, -- true: cursor follows buffer to target window, false: cursor stays
 
   -- User-configurable keymaps - set to false to disable a keymap
   keymaps = {
@@ -28,17 +29,11 @@ M.defaults = {
     close_other_buffers = '<leader>bo',
     close_all_buffers = '<leader>ba',
 
-    -- Move buffer to different split (cursor follows)
-    move_to_right = '<leader>bl',
-    move_to_left = '<leader>bh',
-    move_to_down = '<leader>bj',
-    move_to_up = '<leader>bk',
-
-    -- Swap buffer with adjacent split (cursor stays)
-    swap_right = '<leader>sxl',
-    swap_left = '<leader>sxh',
-    swap_down = '<leader>sxj',
-    swap_up = '<leader>sxk',
+    -- Swap buffer with adjacent split
+    swap_right = '<leader>bl',
+    swap_left = '<leader>bh',
+    swap_down = '<leader>bj',
+    swap_up = '<leader>bk',
 
     -- Buffer navigation (skips buffers visible in other windows)
     prev_buffer = '<C-h>',
