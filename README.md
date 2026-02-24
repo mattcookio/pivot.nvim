@@ -21,6 +21,8 @@
   | | `<C-h>/<C-l>` or `<C-k>/<C-j>` | Navigate prev/next buffer |
   | **Navigation** | `<C-D-h>/<C-D-l>/<C-D-j>/<C-D-k>` | Navigate between splits |
   | **Swap Buffer** | `<leader>bl/bh/bj/bk` | Swap buffer with adjacent split |
+  | **Resize** | `<leader>szh/szl/szj/szk` | Smart resize (grows toward direction) |
+  | | `<leader>sz=` | Equalize all splits |
 - **Get started:** `require('pivot').setup()`
 
 ## ✨ What is pivot.nvim?
@@ -85,6 +87,7 @@ require('pivot').setup({
   smart_close = true,            -- Close buffers while preserving window layout
   prevent_duplicates = true,     -- Avoid showing the same buffer in multiple windows
   swap_follows_cursor = false,   -- true: cursor follows buffer, false: cursor stays in place
+  resize_step = 3,               -- Rows/columns per resize action
 
   -- Keymap configuration (set any to false to disable)
   keymaps = {
@@ -125,6 +128,13 @@ require('pivot').setup({
     nav_right = '<C-D-l>',
     nav_down = '<C-D-j>',
     nav_up = '<C-D-k>',
+
+    -- Resize splits (smart: grows toward direction, shrinks at edges)
+    resize_left = '<leader>szh',
+    resize_right = '<leader>szl',
+    resize_down = '<leader>szj',
+    resize_up = '<leader>szk',
+    resize_equal = '<leader>sz=',
 
     -- Terminal navigation
     exit_terminal_mode = '<Esc>',
@@ -215,6 +225,33 @@ After every split creation command, pivot.nvim attempts to equalize all window s
 | Navigate Splits          | `<C-D-h>/<C-D-l>/<C-D-j>/<C-D-k>`      | Navigate between splits (Normal & Terminal modes)               |
 | Exit Terminal Mode       | `<Esc>` (in term mode)                 | Exit terminal mode                                              |
 | Swap Buffer R/L/D/U      | `<leader>bl/bh/bj/bk`                  | Swap buffer with adjacent split (visual prompt if ambiguous) |
+| Resize Split             | `<leader>szh/szl/szj/szk`              | Smart resize (grows toward direction, shrinks at edges)      |
+| Equalize Splits          | `<leader>sz=`                          | Equalize all split sizes                                     |
+
+### 📐 Smart Resize
+
+Resize splits with edge-aware behavior. The direction key pushes the nearest border in that direction:
+
+- **Not at edge**: The window grows in that direction (border pushes outward).
+- **At edge**: The resize reverses, shrinking the window instead (the only movable border shifts inward).
+
+```
++-------+          <leader>szk on B:
+|   A   |          B is NOT at the top edge,
++-------+          so it grows upward (border
+|   B   |          moves up, B gets taller).
++-------+
+
++-------+          <leader>szk on A:
+|   A   |          A IS at the top edge,
++-------+          so it shrinks (border moves
+|   B   |          up, A gets shorter).
++-------+
+```
+
+- `<leader>szh/szl/szj/szk` - Resize in direction
+- `<leader>sz=` - Equalize all splits
+- Configure step size with `resize_step` (default: 3)
 
 ### 🪟 Buffer Management
 
@@ -245,6 +282,8 @@ Manage buffers like a pro:
 :PivotNavigate {next/prev}            - Navigate buffers (next/prev) that are not in other windows
 :PivotNavigateSplit {direction}       - Navigate to split in specified direction (left/right/up/down or h/j/k/l)
 :PivotSwap {direction}               - Swap buffer with adjacent split (left/right/up/down or h/j/k/l)
+:PivotResize {direction}             - Smart resize split (left/right/up/down or h/j/k/l)
+:PivotResizeEqual                    - Equalize all split sizes
 ```
 
 </details>

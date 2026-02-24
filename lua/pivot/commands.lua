@@ -46,6 +46,12 @@ function M.register_commands(config)
       desc = "Close all splits, keeping only one with empty buffer"
     },
 
+    -- Resize commands
+    [prefix .. "ResizeEqual"] = {
+      function() splits.resize_equal(config) end,
+      desc = "Equalize all split sizes"
+    },
+
     -- Buffer operations
     [prefix .. "CloseBuffer"] = {
       function() buffers.close_buffer(config) end,
@@ -84,6 +90,20 @@ function M.register_commands(config)
         end
       end,
       desc = "Navigate to split in specified direction (left/right/up/down or h/j/k/l)",
+      nargs = 1
+    },
+    [prefix .. "Resize"] = {
+      function(opts)
+        local direction_map = { left = 'h', right = 'l', up = 'k', down = 'j' }
+        local direction = opts.args:lower()
+        local mapped_dir = direction_map[direction] or direction
+        if not table.concat({ 'h', 'j', 'k', 'l' }):find(mapped_dir, 1, true) then
+          vim.notify("Invalid direction: " .. opts.args .. ". Use left/right/up/down or h/j/k/l.", vim.log.levels.ERROR)
+          return
+        end
+        splits.resize(mapped_dir, config)
+      end,
+      desc = "Smart resize split (left/right/up/down or h/j/k/l)",
       nargs = 1
     },
     [prefix .. "Swap"] = {
@@ -184,6 +204,13 @@ function M.setup_keymaps(config)
   set_keymap(keymaps.swap_left, function() splits.swap_buffer_with_split('h', config) end, "Swap buffer with left split")
   set_keymap(keymaps.swap_down, function() splits.swap_buffer_with_split('j', config) end, "Swap buffer with split below")
   set_keymap(keymaps.swap_up, function() splits.swap_buffer_with_split('k', config) end, "Swap buffer with split above")
+
+  -- Resize splits (Normal mode only)
+  set_keymap(keymaps.resize_left, function() splits.resize('h', config) end, "Resize split left")
+  set_keymap(keymaps.resize_right, function() splits.resize('l', config) end, "Resize split right")
+  set_keymap(keymaps.resize_down, function() splits.resize('j', config) end, "Resize split down")
+  set_keymap(keymaps.resize_up, function() splits.resize('k', config) end, "Resize split up")
+  set_keymap(keymaps.resize_equal, function() splits.resize_equal(config) end, "Equalize split sizes")
 
   -- Terminal navigation
   set_keymap(keymaps.exit_terminal_mode, "<C-\\><C-n>", "Exit terminal mode", { 't' })

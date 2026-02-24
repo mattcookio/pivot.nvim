@@ -464,17 +464,25 @@ function M.swap_buffer_with_split(direction, opts)
     end
 end
 
--- Resize the current split in a given direction
+-- Check if current window is at the edge in a given direction
+local function at_edge(direction)
+    return vim.fn.winnr() == vim.fn.winnr(direction)
+end
+
+-- Smart resize: grows the window in the given direction by pushing the
+-- nearest border outward. At edges, reverses to shrink instead.
+--
+-- Example (two horizontal splits, cursor in bottom):
+--   srk → not at top edge → resize +step → grows upward ✓
+--   srj → at bottom edge  → resize -step → shrinks       ✓
 function M.resize(direction, opts)
     local step = opts.resize_step or 3
-    if direction == 'h' then
-        vim.cmd('vertical resize -' .. step)
-    elseif direction == 'l' then
-        vim.cmd('vertical resize +' .. step)
-    elseif direction == 'j' then
-        vim.cmd('resize -' .. step)
-    elseif direction == 'k' then
-        vim.cmd('resize +' .. step)
+    local sign = at_edge(direction) and '-' or '+'
+
+    if direction == 'k' or direction == 'j' then
+        vim.cmd('resize ' .. sign .. step)
+    elseif direction == 'h' or direction == 'l' then
+        vim.cmd('vertical resize ' .. sign .. step)
     end
 end
 

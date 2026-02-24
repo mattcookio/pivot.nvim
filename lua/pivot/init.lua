@@ -43,6 +43,10 @@ M.close_split = function() splits.close_split(config.options) end
 M.close_other_splits = function() splits.close_other_splits(config.options) end
 M.close_all_splits = function() splits.close_all_splits(config.options) end
 
+-- Split resizing
+M.resize = function(direction) splits.resize(direction, config.options) end
+M.resize_equal = function() splits.resize_equal(config.options) end
+
 -- Split navigation
 M.navigate_left = function() splits.navigate_left(config.options) end
 M.navigate_right = function() splits.navigate_right(config.options) end

@@ -7,6 +7,7 @@ M.defaults = {
   smart_close = true,
   prevent_duplicates = true,
   swap_follows_cursor = false, -- true: cursor follows buffer to target window, false: cursor stays
+  resize_step = 3, -- Number of rows/columns per resize action
 
   -- User-configurable keymaps - set to false to disable a keymap
   keymaps = {
@@ -46,6 +47,13 @@ M.defaults = {
     nav_right = '<C-D-l>', -- Navigate to the split on the right
     nav_down = '<C-D-j>',  -- Navigate to the split below
     nav_up = '<C-D-k>',    -- Navigate to the split above
+
+    -- Resize splits (smart: grows toward direction, shrinks at edges)
+    resize_left = '<leader>szh',
+    resize_right = '<leader>szl',
+    resize_down = '<leader>szj',
+    resize_up = '<leader>szk',
+    resize_equal = '<leader>sz=',
 
     -- Terminal navigation
     exit_terminal_mode = '<Esc>', -- Exit terminal mode
