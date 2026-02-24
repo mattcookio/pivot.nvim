@@ -48,12 +48,8 @@ M.defaults = {
     nav_down = '<C-D-j>',  -- Navigate to the split below
     nav_up = '<C-D-k>',    -- Navigate to the split above
 
-    -- Resize splits (smart: grows toward direction, shrinks at edges)
-    resize_left = '<leader>szh',
-    resize_right = '<leader>szl',
-    resize_down = '<leader>szj',
-    resize_up = '<leader>szk',
-    resize_equal = '<leader>sz=',
+    -- Resize mode (hydra-style: h/j/k/l resize, = equalize, Esc exits)
+    resize_mode = '<leader>sz',
 
     -- Terminal navigation
     exit_terminal_mode = '<Esc>', -- Exit terminal mode

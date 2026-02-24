@@ -491,4 +491,34 @@ function M.resize_equal(opts)
     vim.cmd('wincmd =')
 end
 
+-- Hydra-style resize mode: h/j/k/l resize, = equalizes, Esc/q/any other key exits.
+function M.resize_mode(opts)
+    local valid = { h = true, j = true, k = true, l = true }
+    vim.api.nvim_echo({ { ' RESIZE ', 'ModeMsg' }, { '  h/j/k/l resize, = equalize, Esc/Enter exit', 'Comment' } }, false, {})
+    vim.cmd('redraw')
+
+    while true do
+        local ok, char_code = pcall(vim.fn.getchar)
+        if not ok then break end
+        local char = (type(char_code) == 'number' and char_code ~= 0) and vim.fn.nr2char(char_code) or nil
+
+        if not char or char_code == 27 or char_code == 13 then -- Esc or Enter
+            break
+        elseif valid[char] then
+            M.resize(char, opts)
+            vim.api.nvim_echo({ { ' RESIZE ', 'ModeMsg' }, { '  h/j/k/l resize, = equalize, Esc/Enter exit', 'Comment' } }, false, {})
+            vim.cmd('redraw')
+        elseif char == '=' then
+            M.resize_equal(opts)
+            vim.api.nvim_echo({ { ' RESIZE ', 'ModeMsg' }, { '  h/j/k/l resize, = equalize, Esc/Enter exit', 'Comment' } }, false, {})
+            vim.cmd('redraw')
+        else
+            break
+        end
+    end
+
+    vim.api.nvim_echo({ { '' } }, false, {})
+    vim.cmd('redraw')
+end
+
 return M

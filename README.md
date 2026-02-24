@@ -21,8 +21,7 @@
   | | `<C-h>/<C-l>` or `<C-k>/<C-j>` | Navigate prev/next buffer |
   | **Navigation** | `<C-D-h>/<C-D-l>/<C-D-j>/<C-D-k>` | Navigate between splits |
   | **Swap Buffer** | `<leader>bl/bh/bj/bk` | Swap buffer with adjacent split |
-  | **Resize** | `<leader>szh/szl/szj/szk` | Smart resize (grows toward direction) |
-  | | `<leader>sz=` | Equalize all splits |
+  | **Resize** | `<leader>sz` | Resize mode (h/j/k/l/=, Esc exits) |
 - **Get started:** `require('pivot').setup()`
 
 ## ✨ What is pivot.nvim?
@@ -129,12 +128,8 @@ require('pivot').setup({
     nav_down = '<C-D-j>',
     nav_up = '<C-D-k>',
 
-    -- Resize splits (smart: grows toward direction, shrinks at edges)
-    resize_left = '<leader>szh',
-    resize_right = '<leader>szl',
-    resize_down = '<leader>szj',
-    resize_up = '<leader>szk',
-    resize_equal = '<leader>sz=',
+    -- Resize mode (hydra-style: h/j/k/l resize, = equalize, Esc exits)
+    resize_mode = '<leader>sz',
 
     -- Terminal navigation
     exit_terminal_mode = '<Esc>',
@@ -225,8 +220,7 @@ After every split creation command, pivot.nvim attempts to equalize all window s
 | Navigate Splits          | `<C-D-h>/<C-D-l>/<C-D-j>/<C-D-k>`      | Navigate between splits (Normal & Terminal modes)               |
 | Exit Terminal Mode       | `<Esc>` (in term mode)                 | Exit terminal mode                                              |
 | Swap Buffer R/L/D/U      | `<leader>bl/bh/bj/bk`                  | Swap buffer with adjacent split (visual prompt if ambiguous) |
-| Resize Split             | `<leader>szh/szl/szj/szk`              | Smart resize (grows toward direction, shrinks at edges)      |
-| Equalize Splits          | `<leader>sz=`                          | Equalize all split sizes                                     |
+| Resize Mode              | `<leader>sz`                           | Resize mode (h/j/k/l/=, Esc/Enter to exit)                  |
 
 ### 📐 Smart Resize
 
@@ -249,8 +243,7 @@ Resize splits with edge-aware behavior. The direction key pushes the nearest bor
 +-------+
 ```
 
-- `<leader>szh/szl/szj/szk` - Resize in direction
-- `<leader>sz=` - Equalize all splits
+- `<leader>sz` - **Resize mode**: enter a hydra-style mode where bare `h/j/k/l` resize and `=` equalizes. Press `Esc`, `Enter`, or any other key to exit.
 - Configure step size with `resize_step` (default: 3)
 
 ### 🪟 Buffer Management
@@ -284,6 +277,7 @@ Manage buffers like a pro:
 :PivotSwap {direction}               - Swap buffer with adjacent split (left/right/up/down or h/j/k/l)
 :PivotResize {direction}             - Smart resize split (left/right/up/down or h/j/k/l)
 :PivotResizeEqual                    - Equalize all split sizes
+:PivotResizeMode                     - Enter resize mode (h/j/k/l resize, = equalize, Esc/Enter exit)
 ```
 
 </details>

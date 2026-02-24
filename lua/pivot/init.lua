@@ -46,6 +46,7 @@ M.close_all_splits = function() splits.close_all_splits(config.options) end
 -- Split resizing
 M.resize = function(direction) splits.resize(direction, config.options) end
 M.resize_equal = function() splits.resize_equal(config.options) end
+M.resize_mode = function() splits.resize_mode(config.options) end
 
 -- Split navigation
 M.navigate_left = function() splits.navigate_left(config.options) end

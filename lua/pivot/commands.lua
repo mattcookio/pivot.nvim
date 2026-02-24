@@ -51,6 +51,10 @@ function M.register_commands(config)
       function() splits.resize_equal(config) end,
       desc = "Equalize all split sizes"
     },
+    [prefix .. "ResizeMode"] = {
+      function() splits.resize_mode(config) end,
+      desc = "Enter resize mode (h/j/k/l to resize, = equalize, Esc to exit)"
+    },
 
     -- Buffer operations
     [prefix .. "CloseBuffer"] = {
@@ -205,12 +209,8 @@ function M.setup_keymaps(config)
   set_keymap(keymaps.swap_down, function() splits.swap_buffer_with_split('j', config) end, "Swap buffer with split below")
   set_keymap(keymaps.swap_up, function() splits.swap_buffer_with_split('k', config) end, "Swap buffer with split above")
 
-  -- Resize splits (Normal mode only)
-  set_keymap(keymaps.resize_left, function() splits.resize('h', config) end, "Resize split left")
-  set_keymap(keymaps.resize_right, function() splits.resize('l', config) end, "Resize split right")
-  set_keymap(keymaps.resize_down, function() splits.resize('j', config) end, "Resize split down")
-  set_keymap(keymaps.resize_up, function() splits.resize('k', config) end, "Resize split up")
-  set_keymap(keymaps.resize_equal, function() splits.resize_equal(config) end, "Equalize split sizes")
+  -- Resize mode (Normal mode only)
+  set_keymap(keymaps.resize_mode, function() splits.resize_mode(config) end, "Enter resize mode")
 
   -- Terminal navigation
   set_keymap(keymaps.exit_terminal_mode, "<C-\\><C-n>", "Exit terminal mode", { 't' })
